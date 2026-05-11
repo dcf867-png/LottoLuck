@@ -34,7 +34,7 @@ export default function BonusBallChart({ game, scores }: Props) {
                     style={{ height: `${Math.max(pct * 80, 10)}px` }}
                     title={`${s.number}: ${s.appearances}×`}
                   >
-                    <span className="text-[10px] text-white font-bold leading-none mb-0.5">{s.appearances}</span>
+                    <span className="text-[12px] text-black font-bold leading-none mb-0.5">{s.appearances}</span>
                   </div>
                   <span className="text-[12px] text-gray-400 leading-none">{s.number}</span>
                 </div>
