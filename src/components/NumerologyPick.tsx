@@ -63,7 +63,7 @@ export default function NumerologyPick({ game }: Props) {
           onClick={() => setOpen(o => !o)}
           className="w-full flex items-center justify-between text-left"
         >
-          <h3 className="text-sm font-semibold text-yellow-400">Numerology Quick Pick</h3>
+          <h3 className="text-sm font-semibold text-yellow-400 underline underline-offset-2">Numerology Quick Pick</h3>
           <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
         </button>
         <p className="text-xs text-gray-400 mt-1">No personal data is collected or shared with anyone.</p>

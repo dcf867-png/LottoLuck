@@ -14,7 +14,7 @@ export default function ModeToggle({ game, mode, onModeChange }: Props) {
       <button
         onClick={() => onModeChange('full')}
         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          mode === 'full' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
+          mode === 'full' ? 'bg-purple-600 text-white' : 'text-gray-200 hover:text-white'
         }`}
       >
         Full Pick
@@ -22,7 +22,7 @@ export default function ModeToggle({ game, mode, onModeChange }: Props) {
       <button
         onClick={() => onModeChange('bonus')}
         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          mode === 'bonus' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
+          mode === 'bonus' ? 'bg-purple-600 text-white' : 'text-gray-200 hover:text-white'
         }`}
       >
         {bonusLabel} Only

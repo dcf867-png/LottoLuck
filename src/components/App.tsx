@@ -85,12 +85,12 @@ export default function App() {
       </div>
       <SuggestedPick game={activeGame} mode={mode} result={result} />
       <DrawLookup game={activeGame} draws={gameData.draws} />
+      <NumerologyPick game={activeGame} />
+      <AstrologyPick game={activeGame} />
       <div className="px-4 mb-4">
         <BonusBallChart game={activeGame} scores={result.bonusScores} />
       </div>
       <AnalysisPanels game={activeGame} mode={mode} result={result} />
-      <NumerologyPick game={activeGame} />
-      <AstrologyPick game={activeGame} />
       <footer className="pb-6 flex justify-center">
         <div className="bg-black rounded-xl px-4 py-3 flex flex-col gap-1 text-center text-xs">
           <span className="text-pink-400">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>

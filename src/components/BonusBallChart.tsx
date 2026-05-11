@@ -23,21 +23,26 @@ export default function BonusBallChart({ game, scores }: Props) {
         <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
       </button>
       {open && (
-        <div className="flex items-end gap-px h-24 overflow-x-auto mt-3">
-          {sorted.map(s => {
-            const pct = s.appearances / maxApp
-            return (
-              <div key={s.number} className="flex flex-col items-center gap-0.5 flex-1 min-w-[10px]">
-                <div
-                  className={`w-full ${cfg.bonusColor} rounded-t-sm opacity-80`}
-                  style={{ height: `${Math.max(pct * 80, 2)}px` }}
-                  title={`${s.number}: ${s.appearances}×`}
-                />
-                <span className="text-[12px] text-gray-400 leading-none">{s.number}</span>
-              </div>
-            )
-          })}
-        </div>
+        <>
+          <div className="flex items-end gap-px h-24 overflow-x-auto mt-3">
+            {sorted.map(s => {
+              const pct = s.appearances / maxApp
+              return (
+                <div key={s.number} className="flex flex-col items-center gap-0.5 flex-1 min-w-[10px]">
+                  <div
+                    className={`w-full ${cfg.bonusColor} rounded-t-sm opacity-80 flex items-end justify-center`}
+                    style={{ height: `${Math.max(pct * 80, 10)}px` }}
+                    title={`${s.number}: ${s.appearances}×`}
+                  >
+                    <span className="text-[10px] text-white font-bold leading-none mb-0.5">{s.appearances}</span>
+                  </div>
+                  <span className="text-[12px] text-gray-400 leading-none">{s.number}</span>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2 text-center">Includes all draws from the current era up to the most recent available.</p>
+        </>
       )}
     </div>
   )
