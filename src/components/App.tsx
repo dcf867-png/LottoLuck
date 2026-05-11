@@ -10,6 +10,8 @@ import ModeToggle from './ModeToggle'
 import SuggestedPick from './SuggestedPick'
 import AnalysisPanels from './AnalysisPanels'
 import BonusBallChart from './BonusBallChart'
+import NumerologyPick from './NumerologyPick'
+import AstrologyPick from './AstrologyPick'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
 
@@ -85,7 +87,9 @@ export default function App() {
         <BonusBallChart game={activeGame} scores={result.bonusScores} />
       </div>
       <AnalysisPanels game={activeGame} mode={mode} result={result} />
-      <footer className="text-center text-xs text-gray-600 pb-6">
+      <NumerologyPick game={activeGame} />
+      <AstrologyPick game={activeGame} />
+      <footer className="text-center text-xs text-gray-400 pb-6">
         {gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data
       </footer>
     </div>
