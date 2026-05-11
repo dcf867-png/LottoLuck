@@ -91,8 +91,11 @@ export default function App() {
       <AnalysisPanels game={activeGame} mode={mode} result={result} />
       <NumerologyPick game={activeGame} />
       <AstrologyPick game={activeGame} />
-      <footer className="text-center text-xs text-gray-400 pb-6">
-        {gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data
+      <footer className="pb-6 flex justify-center">
+        <div className="bg-black rounded-xl px-4 py-3 flex flex-col gap-1 text-center text-xs">
+          <span className="text-pink-400">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>
+          <span className="text-orange-400">For entertainment purposes only.</span>
+        </div>
       </footer>
     </div>
   )
