@@ -29,7 +29,8 @@ export function parseApiRow(game: Game, row: Record<string, string>): Draw {
   // Mega Millions: 5 numbers in winning_numbers, bonus in mega_ball field
   const whites = nums.slice(0, 5).sort((a, b) => a - b)
   const bonus = game === 'powerball' ? nums[5] : parseInt(row['mega_ball'], 10)
-  return { date, whites, bonus, game, era: tagEra(game, date) }
+  const multiplier = row.multiplier ? parseInt(row.multiplier, 10) : undefined
+  return { date, whites, bonus, game, era: tagEra(game, date), multiplier }
 }
 
 export function parseCsv(game: Game, csvText: string): Draw[] {

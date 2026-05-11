@@ -12,6 +12,7 @@ import AnalysisPanels from './AnalysisPanels'
 import BonusBallChart from './BonusBallChart'
 import NumerologyPick from './NumerologyPick'
 import AstrologyPick from './AstrologyPick'
+import DrawLookup from './DrawLookup'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
 
@@ -83,6 +84,7 @@ export default function App() {
         <ModeToggle game={activeGame} mode={mode} onModeChange={setMode} />
       </div>
       <SuggestedPick game={activeGame} mode={mode} result={result} />
+      <DrawLookup game={activeGame} draws={gameData.draws} />
       <div className="px-4 mb-4">
         <BonusBallChart game={activeGame} scores={result.bonusScores} />
       </div>
