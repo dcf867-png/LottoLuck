@@ -1,16 +1,11 @@
 import { useState } from 'react'
-import type { Game } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
 import { buildNatalChart, type NatalChart } from '../lib/astrology'
 import { generateAstrologyPick } from '../lib/astroLucky'
 
-interface Props {
-  game: Game
-}
-
-interface GeneratedPick {
-  whites: number[]
-  bonus: number
+interface PickPair {
+  pb: { whites: number[]; bonus: number }
+  mm: { whites: number[]; bonus: number }
   index: number
 }
 
@@ -44,14 +39,13 @@ function ChartBadge({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function AstrologyPick({ game }: Props) {
-  const cfg = GAME_CONFIG[game]
+export default function AstrologyPick() {
   const [open, setOpen] = useState(false)
   const [birthDate, setBirthDate] = useState('')
   const [birthTime, setBirthTime] = useState('')
   const [cityState, setCityState] = useState('')
   const [chart, setChart] = useState<NatalChart | null>(null)
-  const [picks, setPicks] = useState<GeneratedPick[]>([])
+  const [picks, setPicks] = useState<PickPair[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -67,9 +61,12 @@ export default function AstrologyPick({ game }: Props) {
         if (coords) { lat = coords.lat; lng = coords.lng }
       }
       const natal = buildNatalChart(birthDate, birthTime || undefined, lat, lng)
-      const pick = generateAstrologyPick(natal, game, 0)
       setChart(natal)
-      setPicks([{ ...pick, index: 0 }])
+      setPicks([{
+        pb: generateAstrologyPick(natal, 'powerball', 0),
+        mm: generateAstrologyPick(natal, 'megamillions', 0),
+        index: 0,
+      }])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong.')
     } finally {
@@ -80,8 +77,11 @@ export default function AstrologyPick({ game }: Props) {
   function handleGenerateAnother() {
     if (!chart) return
     const nextIndex = picks.length
-    const pick = generateAstrologyPick(chart, game, nextIndex)
-    setPicks(prev => [...prev, { ...pick, index: nextIndex }])
+    setPicks(prev => [...prev, {
+      pb: generateAstrologyPick(chart, 'powerball', nextIndex),
+      mm: generateAstrologyPick(chart, 'megamillions', nextIndex),
+      index: nextIndex,
+    }])
   }
 
   const sun = chart?.planets.find(p => p.name === 'Sun')
@@ -94,7 +94,7 @@ export default function AstrologyPick({ game }: Props) {
           onClick={() => setOpen(o => !o)}
           className="flex items-center gap-3 text-left"
         >
-          <h3 className="text-sm font-semibold text-indigo-400 underline underline-offset-2">Astrology Luck Calculator</h3>
+          <h3 className="text-sm font-semibold text-purple-400 underline underline-offset-2">Astrology Pick</h3>
           <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
         </button>
       </div>
@@ -186,14 +186,26 @@ export default function AstrologyPick({ game }: Props) {
               </div>
 
               <div className="flex flex-col gap-3">
-                {picks.map((pick, i) => (
-                  <div key={pick.index} className="flex flex-col items-center gap-2 bg-gray-800 rounded-lg py-3 px-2">
-                    <p className="text-xs text-gray-300 uppercase tracking-widest">Pick {i + 1}</p>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {pick.whites.map(n => (
-                        <Ball key={n} num={n} color="bg-gray-700" />
-                      ))}
-                      <Ball num={pick.bonus} color={cfg.bonusColor} />
+                {picks.map((pair, i) => (
+                  <div key={pair.index} className="flex flex-col gap-3 bg-gray-800 rounded-lg py-3 px-2">
+                    <p className="text-xs text-gray-300 uppercase tracking-widest text-center">Pick {i + 1}</p>
+
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-semibold text-red-500">Powerball</span>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {pair.pb.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                        <Ball num={pair.pb.bonus} color={GAME_CONFIG.powerball.bonusColor} />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-700" />
+
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-semibold text-yellow-400">Mega Millions</span>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {pair.mm.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                        <Ball num={pair.mm.bonus} color={GAME_CONFIG.megamillions.bonusColor} />
+                      </div>
                     </div>
                   </div>
                 ))}

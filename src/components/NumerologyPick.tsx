@@ -1,15 +1,10 @@
 import { useState } from 'react'
-import type { Game } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
 import { buildProfile, generateNumerologyPick, type NumerologyProfile } from '../lib/numerology'
 
-interface Props {
-  game: Game
-}
-
-interface GeneratedPick {
-  whites: number[]
-  bonus: number
+interface PickPair {
+  pb: { whites: number[]; bonus: number }
+  mm: { whites: number[]; bonus: number }
   index: number
 }
 
@@ -30,13 +25,12 @@ function ProfileBadge({ label, value }: { label: string; value: number }) {
   )
 }
 
-export default function NumerologyPick({ game }: Props) {
-  const cfg = GAME_CONFIG[game]
+export default function NumerologyPick() {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [dob, setDob] = useState('')
   const [profile, setProfile] = useState<NumerologyProfile | null>(null)
-  const [picks, setPicks] = useState<GeneratedPick[]>([])
+  const [picks, setPicks] = useState<PickPair[]>([])
   const [error, setError] = useState('')
 
   function handleGenerate() {
@@ -45,15 +39,21 @@ export default function NumerologyPick({ game }: Props) {
     setError('')
     const newProfile = buildProfile(name.trim(), dob)
     setProfile(newProfile)
-    const first = generateNumerologyPick(newProfile, game, 0)
-    setPicks([{ ...first, index: 0 }])
+    setPicks([{
+      pb: generateNumerologyPick(newProfile, 'powerball', 0),
+      mm: generateNumerologyPick(newProfile, 'megamillions', 0),
+      index: 0,
+    }])
   }
 
   function handleGenerateAnother() {
     if (!profile) return
     const nextIndex = picks.length
-    const next = generateNumerologyPick(profile, game, nextIndex)
-    setPicks(prev => [...prev, { ...next, index: nextIndex }])
+    setPicks(prev => [...prev, {
+      pb: generateNumerologyPick(profile, 'powerball', nextIndex),
+      mm: generateNumerologyPick(profile, 'megamillions', nextIndex),
+      index: nextIndex,
+    }])
   }
 
   return (
@@ -63,7 +63,7 @@ export default function NumerologyPick({ game }: Props) {
           onClick={() => setOpen(o => !o)}
           className="flex items-center gap-3 text-left"
         >
-          <h3 className="text-sm font-semibold text-yellow-400 underline underline-offset-2">Numerology Quick Pick</h3>
+          <h3 className="text-sm font-semibold text-purple-400 underline underline-offset-2">Numerology Pick</h3>
           <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
         </button>
       </div>
@@ -98,9 +98,7 @@ export default function NumerologyPick({ game }: Props) {
                     onClick={() => setDob('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white text-[12px] leading-none"
                     aria-label="Clear date"
-                  >
-                    ×
-                  </button>
+                  >×</button>
                 )}
               </div>
             </div>
@@ -128,14 +126,26 @@ export default function NumerologyPick({ game }: Props) {
               </div>
 
               <div className="flex flex-col gap-3">
-                {picks.map((pick, i) => (
-                  <div key={pick.index} className="flex flex-col items-center gap-2 bg-gray-800 rounded-lg py-3 px-2">
-                    <p className="text-xs text-gray-300 uppercase tracking-widest">Pick {i + 1}</p>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {pick.whites.map(n => (
-                        <Ball key={n} num={n} color="bg-gray-700" />
-                      ))}
-                      <Ball num={pick.bonus} color={cfg.bonusColor} />
+                {picks.map((pair, i) => (
+                  <div key={pair.index} className="flex flex-col gap-3 bg-gray-800 rounded-lg py-3 px-2">
+                    <p className="text-xs text-gray-300 uppercase tracking-widest text-center">Pick {i + 1}</p>
+
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-semibold text-red-500">Powerball</span>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {pair.pb.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                        <Ball num={pair.pb.bonus} color={GAME_CONFIG.powerball.bonusColor} />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-700" />
+
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-semibold text-yellow-400">Mega Millions</span>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {pair.mm.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                        <Ball num={pair.mm.bonus} color={GAME_CONFIG.megamillions.bonusColor} />
+                      </div>
                     </div>
                   </div>
                 ))}

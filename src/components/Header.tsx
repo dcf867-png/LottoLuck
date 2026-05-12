@@ -47,7 +47,7 @@ export default function Header({ activeTab, onTabChange }: Props) {
             onClick={() => onTabChange(tab)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tabActiveClass(tab, activeTab)}`}
           >
-            {tab === 'powerball' ? 'Powerball' : tab === 'megamillions' ? 'Mega Millions' : 'Lucky Stars'}
+            {tab === 'powerball' ? 'Powerball' : tab === 'megamillions' ? 'Mega Millions' : 'Lucky Star Picks'}
           </button>
         ))}
       </div>
