@@ -4,7 +4,7 @@ import mmCsv from '../data/megamillions-1996-2001.csv?raw'
 import { parseCsv, parseApiRow, mergeAndDedup } from '../lib/parse'
 import { saveToCache, loadFromCache, isCacheValid } from '../lib/cache'
 import { analyze } from '../lib/analysis'
-import type { Game, Mode, GameData, CachedAppData, AnalysisResult } from '../lib/types'
+import type { Game, Tab, Mode, GameData, CachedAppData, AnalysisResult } from '../lib/types'
 import Header from './Header'
 import ModeToggle from './ModeToggle'
 import SuggestedPick from './SuggestedPick'
@@ -44,6 +44,7 @@ type AppState =
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>({ status: 'loading' })
+  const [activeTab, setActiveTab] = useState<Tab>('powerball')
   const [activeGame, setActiveGame] = useState<Game>('powerball')
   const [mode, setMode] = useState<Mode>('full')
 
@@ -66,9 +67,12 @@ export default function App() {
 
   useEffect(() => { load() }, [load])
 
-  const handleGameChange = (g: Game) => {
-    setActiveGame(g)
-    setMode('full')
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab)
+    if (tab !== 'personal') {
+      setActiveGame(tab)
+      setMode('full')
+    }
   }
 
   if (appState.status === 'loading') return <LoadingScreen />
@@ -76,27 +80,43 @@ export default function App() {
 
   const gameData = activeGame === 'powerball' ? appState.pb : appState.mm
   const result: AnalysisResult = analyze(gameData.currentEraDraws, activeGame)
+  const isGameTab = activeTab !== 'personal'
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Header activeGame={activeGame} onGameChange={handleGameChange} />
-      <div className="px-4 mb-4">
-        <ModeToggle game={activeGame} mode={mode} onModeChange={setMode} />
-      </div>
-      <SuggestedPick game={activeGame} mode={mode} result={result} />
-      <DrawLookup game={activeGame} draws={gameData.draws} />
-      <NumerologyPick game={activeGame} />
-      <AstrologyPick game={activeGame} />
-      <div className="px-4 mb-4">
-        <BonusBallChart game={activeGame} scores={result.bonusScores} />
-      </div>
-      <AnalysisPanels game={activeGame} mode={mode} result={result} />
-      <footer className="pb-6 flex justify-center">
-        <div className="bg-black rounded-xl px-4 py-3 flex flex-col gap-1 text-center text-xs">
-          <span className="text-white">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>
-          <span className="text-white">For entertainment purposes only.</span>
-        </div>
-      </footer>
+      <Header activeTab={activeTab} onTabChange={handleTabChange} />
+
+      {isGameTab && (
+        <>
+          <div className="px-4 mb-4">
+            <ModeToggle game={activeGame} mode={mode} onModeChange={setMode} />
+          </div>
+          <SuggestedPick game={activeGame} mode={mode} result={result} />
+          <DrawLookup game={activeGame} draws={gameData.draws} />
+          <div className="px-4 mb-4">
+            <BonusBallChart game={activeGame} scores={result.bonusScores} />
+          </div>
+          <AnalysisPanels game={activeGame} mode={mode} result={result} />
+          <footer className="pb-6 flex justify-center">
+            <div className="bg-black rounded-xl px-4 py-3 flex flex-col gap-1 text-center text-xs">
+              <span className="text-white">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>
+              <span className="text-white">For entertainment purposes only.</span>
+            </div>
+          </footer>
+        </>
+      )}
+
+      {!isGameTab && (
+        <>
+          <NumerologyPick game={activeGame} />
+          <AstrologyPick game={activeGame} />
+          <footer className="pb-6 flex justify-center">
+            <div className="bg-black rounded-xl px-4 py-3 flex flex-col gap-1 text-center text-xs">
+              <span className="text-white">For entertainment purposes only.</span>
+            </div>
+          </footer>
+        </>
+      )}
     </div>
   )
 }

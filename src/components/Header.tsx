@@ -1,9 +1,9 @@
-import type { Game } from '../lib/types'
+import type { Game, Tab } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
 
 interface Props {
-  activeGame: Game
-  onGameChange: (g: Game) => void
+  activeTab: Tab
+  onTabChange: (t: Tab) => void
 }
 
 // Powerball: Mon(1), Wed(3), Sat(6) — Mega Millions: Tue(2), Fri(5)
@@ -27,24 +27,27 @@ function getNextDrawDate(game: Game): string {
   return next.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-export default function Header({ activeGame, onGameChange }: Props) {
+function tabActiveClass(tab: Tab, active: Tab): string {
+  if (tab !== active) return 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+  if (tab === 'powerball') return 'bg-red-600 text-white'
+  if (tab === 'megamillions') return 'bg-yellow-500 text-white'
+  return 'bg-purple-600 text-white'
+}
+
+export default function Header({ activeTab, onTabChange }: Props) {
   return (
     <header className="flex flex-col items-center gap-4 py-6 px-4">
       <h1 className="text-3xl font-bold tracking-tight text-white">
         Lotto<span className="text-purple-400">Pulse</span>
       </h1>
       <div className="flex gap-2">
-        {(['powerball', 'megamillions'] as Game[]).map(game => (
+        {(['powerball', 'megamillions', 'personal'] as Tab[]).map(tab => (
           <button
-            key={game}
-            onClick={() => onGameChange(game)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              activeGame === game
-                ? `${GAME_CONFIG[game].tabColor} text-white`
-                : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-            }`}
+            key={tab}
+            onClick={() => onTabChange(tab)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tabActiveClass(tab, activeTab)}`}
           >
-            {GAME_CONFIG[game].label}
+            {tab === 'powerball' ? 'Powerball' : tab === 'megamillions' ? 'Mega Millions' : 'Lucky Stars'}
           </button>
         ))}
       </div>

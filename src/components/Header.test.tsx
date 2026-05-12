@@ -3,15 +3,16 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import Header from './Header'
 
 describe('Header', () => {
-  it('renders both game tabs', () => {
-    render(<Header activeGame="powerball" onGameChange={() => {}} />)
+  it('renders game tabs and lucky stars tab', () => {
+    render(<Header activeTab="powerball" onTabChange={() => {}} />)
     expect(screen.getByRole('button', { name: /powerball/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /mega millions/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /lucky stars/i })).toBeInTheDocument()
   })
 
-  it('calls onGameChange with megamillions when tab clicked', () => {
+  it('calls onTabChange with megamillions when tab clicked', () => {
     const onChange = vi.fn()
-    render(<Header activeGame="powerball" onGameChange={onChange} />)
+    render(<Header activeTab="powerball" onTabChange={onChange} />)
     fireEvent.click(screen.getByRole('button', { name: /mega millions/i }))
     expect(onChange).toHaveBeenCalledWith('megamillions')
   })

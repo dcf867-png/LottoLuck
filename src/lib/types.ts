@@ -1,4 +1,5 @@
 export type Game = 'powerball' | 'megamillions'
+export type Tab = Game | 'personal'
 export type Mode = 'full' | 'bonus'
 export type Era = 'current' | 'legacy'
 
