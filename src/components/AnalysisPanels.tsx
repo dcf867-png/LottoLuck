@@ -23,14 +23,16 @@ function ScoreTable({ scores, label, color }: { scores: NumberScore[]; label: st
   const [open, setOpen] = useState(false)
   const top = scores.slice(0, 10)
   return (
-    <div className="bg-gray-900 rounded-xl p-4">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between text-left"
-      >
-        <h3 className={`text-sm font-semibold ${color}`}>{label} — Top 10</h3>
-        <span className={`text-blue-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
-      </button>
+    <div>
+      <div className="bg-gray-900 rounded-xl py-2 px-3 w-fit mx-auto">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="flex items-center gap-3 text-left"
+        >
+          <h3 className={`text-sm font-semibold ${color}`}>{label} — Top 10</h3>
+          <span className={`text-blue-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
+        </button>
+      </div>
       {open && (
         <table className="w-full text-xs mt-3">
           <thead>
@@ -61,18 +63,20 @@ function ScoreTable({ scores, label, color }: { scores: NumberScore[]; label: st
   )
 }
 
-function PairsPanel({ pairs }: { pairs: AnalysisResult['topPairs'] }) {
+function PairsPanel({ pairs, color }: { pairs: AnalysisResult['topPairs']; color: string }) {
   const [open, setOpen] = useState(false)
   if (pairs.length === 0) return null
   return (
-    <div className="bg-gray-900 rounded-xl p-4">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between text-left"
-      >
-        <h3 className="text-sm font-semibold text-cyan-400">Top Co-occurring Pairs</h3>
-        <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
-      </button>
+    <div>
+      <div className="bg-gray-900 rounded-xl py-2 px-3 w-fit mx-auto">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="flex items-center gap-3 text-left"
+        >
+          <h3 className={`text-sm font-semibold ${color}`}>Top Co-occurring Pairs</h3>
+          <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
+        </button>
+      </div>
       {open && (
         <div className="flex flex-wrap gap-2 mt-3">
           {pairs.slice(0, 10).map(p => (
@@ -88,20 +92,21 @@ function PairsPanel({ pairs }: { pairs: AnalysisResult['topPairs'] }) {
 
 export default function AnalysisPanels({ game, mode, result }: Props) {
   const cfg = GAME_CONFIG[game]
+  const titleColor = game === 'powerball' ? 'text-red-500' : 'text-blue-400'
 
   if (mode === 'bonus') {
     return (
       <div className="flex flex-col gap-4 px-4 pb-8">
-        <ScoreTable scores={result.bonusScores} label={`${cfg.bonusLabel} Scores`} color="text-pink-400" />
+        <ScoreTable scores={result.bonusScores} label={`${cfg.bonusLabel} Scores`} color={titleColor} />
       </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-8">
-      <ScoreTable scores={result.whiteScores} label="White Ball Scores" color="text-white" />
-      <ScoreTable scores={result.bonusScores} label={`${cfg.bonusLabel} Scores`} color="text-pink-400" />
-      <PairsPanel pairs={result.topPairs} />
+      <ScoreTable scores={result.whiteScores} label="White Ball Scores" color={titleColor} />
+      <ScoreTable scores={result.bonusScores} label={`${cfg.bonusLabel} Scores`} color={titleColor} />
+      <PairsPanel pairs={result.topPairs} color={titleColor} />
     </div>
   )
 }
