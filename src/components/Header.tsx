@@ -51,7 +51,7 @@ export default function Header({ activeGame, onGameChange }: Props) {
       <div className="flex gap-4 text-xs">
         {(['powerball', 'megamillions'] as Game[]).map(game => (
           <div key={game} className="flex flex-col items-center gap-0.5 bg-black rounded-xl px-4 py-2">
-            <span className={game === 'powerball' ? 'text-red-700' : 'text-blue-400'}>{GAME_CONFIG[game].label}</span>
+            <span className={game === 'powerball' ? 'text-red-700' : 'text-yellow-400'}>{GAME_CONFIG[game].label}</span>
             <span className="font-semibold text-white">{getNextDrawDate(game)}</span>
           </div>
         ))}

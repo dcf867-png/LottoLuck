@@ -72,7 +72,7 @@ export const GAME_CONFIG = {
     label: 'Mega Millions',
     bonusLabel: 'Mega Ball',
     bonusColor: 'bg-yellow-400',
-    tabColor: 'bg-blue-600',
+    tabColor: 'bg-yellow-500',
   },
 } as const satisfies Record<Game, {
   currentEraStart: string

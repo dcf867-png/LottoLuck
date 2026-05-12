@@ -57,7 +57,7 @@ export default function SuggestedPick({ game, mode, result }: Props) {
           onClick={() => setOpen(o => !o)}
           className="flex items-center gap-3 text-left"
         >
-          <h2 className={`text-sm font-medium uppercase tracking-widest underline underline-offset-2 ${game === 'powerball' ? 'text-red-500' : 'text-blue-400'}`}>{title}</h2>
+          <h2 className={`text-sm font-medium uppercase tracking-widest underline underline-offset-2 ${game === 'powerball' ? 'text-red-500' : 'text-yellow-400'}`}>{title}</h2>
           <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
         </button>
       </div>

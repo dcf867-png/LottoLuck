@@ -30,7 +30,7 @@ function ScoreTable({ scores, label, color }: { scores: NumberScore[]; label: st
           className="flex items-center gap-3 text-left"
         >
           <h3 className={`text-sm font-semibold ${color}`}>{label} — Top 10</h3>
-          <span className={`text-blue-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
+          <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
         </button>
       </div>
       {open && (
@@ -92,7 +92,7 @@ function PairsPanel({ pairs, color }: { pairs: AnalysisResult['topPairs']; color
 
 export default function AnalysisPanels({ game, mode, result }: Props) {
   const cfg = GAME_CONFIG[game]
-  const titleColor = game === 'powerball' ? 'text-red-500' : 'text-blue-400'
+  const titleColor = game === 'powerball' ? 'text-red-500' : 'text-yellow-400'
 
   if (mode === 'bonus') {
     return (

@@ -43,7 +43,7 @@ export default function DrawLookup({ game, draws }: Props) {
           onClick={() => setOpen(o => !o)}
           className="flex items-center gap-3 text-left"
         >
-          <h3 className={`text-sm font-semibold ${game === 'powerball' ? 'text-red-500' : 'text-blue-400'}`}>Draw Date Lookup</h3>
+          <h3 className={`text-sm font-semibold ${game === 'powerball' ? 'text-red-500' : 'text-yellow-400'}`}>Draw Date Lookup</h3>
           <span className={`text-gray-400 text-xl leading-none transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>▾</span>
         </button>
       </div>
