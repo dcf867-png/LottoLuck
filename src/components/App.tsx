@@ -13,6 +13,7 @@ import BonusBallChart from './BonusBallChart'
 import NumerologyPick from './NumerologyPick'
 import AstrologyPick from './AstrologyPick'
 import DrawLookup from './DrawLookup'
+import ScoringKey from './ScoringKey'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
 
@@ -87,35 +88,32 @@ export default function App() {
       <Header activeTab={activeTab} onTabChange={handleTabChange} />
 
       {isGameTab && (
-        <>
-          <div className="px-4 mb-4">
-            <ModeToggle game={activeGame} mode={mode} onModeChange={setMode} />
-          </div>
+        <div className="deck-shell pb-10">
+          <ModeToggle game={activeGame} mode={mode} onModeChange={setMode} />
           <SuggestedPick game={activeGame} mode={mode} result={result} />
           <DrawLookup game={activeGame} draws={gameData.draws} />
-          <div className="px-4 mb-4">
-            <BonusBallChart game={activeGame} scores={result.bonusScores} />
-          </div>
+          <BonusBallChart game={activeGame} scores={result.bonusScores} />
           <AnalysisPanels game={activeGame} mode={mode} result={result} />
-          <footer className="pb-6 flex justify-center">
-            <div className="bg-black rounded-xl px-4 py-3 flex flex-col gap-1 text-center text-xs">
-              <span className="text-white">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>
-              <span className="text-white">For entertainment purposes only.</span>
+          <ScoringKey />
+          <footer className="flex justify-center">
+            <div className="panel px-4 py-3 flex flex-col gap-1 text-center text-xs w-full">
+              <span className="text-white/70">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>
+              <span className="text-white/50">For entertainment purposes only.</span>
             </div>
           </footer>
-        </>
+        </div>
       )}
 
       {!isGameTab && (
-        <>
+        <div className="deck-shell pb-10">
           <AstrologyPick />
           <NumerologyPick />
-          <footer className="pb-6 flex justify-center">
-            <div className="bg-black rounded-xl px-4 py-3 flex flex-col gap-1 text-center text-xs">
-              <span className="text-white">For entertainment purposes only.</span>
+          <footer className="flex justify-center">
+            <div className="panel px-4 py-3 text-center text-xs w-full">
+              <span className="text-white/50">For entertainment purposes only.</span>
             </div>
           </footer>
-        </>
+        </div>
       )}
     </div>
   )

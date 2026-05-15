@@ -17,7 +17,73 @@ body {
   background-image: url('/space-bg.jpg');
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   background-color: #0f0f1a;
   color: #ffffff;
   min-height: 100vh;
+}
+
+/* Dark vignette over the space image so text stays readable against bright stars */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at center, rgba(2, 0, 10, 0.25) 0%, rgba(2, 0, 10, 0.55) 70%, rgba(2, 0, 10, 0.75) 100%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Logo */
+.logo-text {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: white;
+}
+
+.logo-glow {
+  color: #a78bfa;
+  text-shadow: 0 0 22px rgba(167, 139, 250, 0.65);
+}
+
+/* Glassmorphism panel — each section is a full frosted-glass card */
+.panel {
+  background: rgba(10, 5, 25, 0.6);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+/* Panel section heading */
+.panel-title {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Content area wrapper — vertical stack with gap and side padding */
+.deck-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px;
 }

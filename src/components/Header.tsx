@@ -37,8 +37,8 @@ function tabActiveClass(tab: Tab, active: Tab): string {
 export default function Header({ activeTab, onTabChange }: Props) {
   return (
     <header className="flex flex-col items-center gap-4 py-6 px-4">
-      <h1 className="text-3xl font-bold tracking-tight text-white">
-        Lotto<span className="text-purple-400">Pulse</span>
+      <h1 className="logo-text">
+        Lotto<span className="logo-glow">Pulse</span>
       </h1>
       <div className="flex gap-2">
         {(['powerball', 'megamillions', 'personal'] as Tab[]).map(tab => (
