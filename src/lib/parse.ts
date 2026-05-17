@@ -41,6 +41,30 @@ export function parseCsv(game: Game, csvText: string): Draw[] {
   return result.data.map(row => parseCsvRow(game, row))
 }
 
+// Texas Lottery CSV format (no header):
+// Mega Millions, Month, Day, Year, n1, n2, n3, n4, n5, megaball, megaplier
+export function parseTxLotteryCsv(csvText: string): Draw[] {
+  return csvText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.startsWith('Mega Millions'))
+    .map(line => {
+      const p = line.split(',')
+      const month = p[1].trim().padStart(2, '0')
+      const day = p[2].trim().padStart(2, '0')
+      const year = p[3].trim()
+      const date = `${year}-${month}-${day}`
+      const whites = [p[4], p[5], p[6], p[7], p[8]]
+        .map(n => parseInt(n.trim(), 10))
+        .sort((a, b) => a - b)
+      const bonus = parseInt(p[9].trim(), 10)
+      const rawMult = p[10]?.trim()
+      const multiplier = rawMult ? parseInt(rawMult, 10) || undefined : undefined
+      return { date, whites, bonus, game: 'megamillions' as const, era: tagEra('megamillions', date), multiplier }
+    })
+    .filter(d => !isNaN(d.bonus))
+}
+
 export function mergeAndDedup(a: Draw[], b: Draw[]): Draw[] {
   const seen = new Map<string, Draw>()
   for (const draw of [...a, ...b]) {

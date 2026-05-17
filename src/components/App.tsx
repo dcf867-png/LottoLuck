@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import pbCsv from '../data/powerball-1992-2009.csv?raw'
 import mmCsv from '../data/megamillions-1996-2001.csv?raw'
-import { parseCsv, parseApiRow, mergeAndDedup } from '../lib/parse'
+import { parseCsv, parseApiRow, parseTxLotteryCsv, mergeAndDedup } from '../lib/parse'
 import { saveToCache, loadFromCache, isCacheValid } from '../lib/cache'
 import { analyze } from '../lib/analysis'
 import type { Game, Tab, Mode, GameData, CachedAppData, AnalysisResult } from '../lib/types'
@@ -16,25 +16,28 @@ import ScoringKey from './ScoringKey'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
 
-const API_BASE = 'https://data.ny.gov/resource'
-const PB_RESOURCE = 'd6yy-54nr'
-const MM_RESOURCE = '5xaw-6ayf'
-const LIMIT = 10000
+const PB_API = 'https://data.ny.gov/resource/d6yy-54nr.json?$limit=10000&$order=draw_date+DESC'
 
-async function fetchGameData(game: Game): Promise<GameData> {
-  const resource = game === 'powerball' ? PB_RESOURCE : MM_RESOURCE
-  const url = `${API_BASE}/${resource}.json?$limit=${LIMIT}&$order=draw_date+DESC`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`${game} API returned ${res.status}`)
+async function fetchPbData(): Promise<GameData> {
+  const res = await fetch(PB_API)
+  if (!res.ok) throw new Error(`Powerball API returned ${res.status}`)
   const rows: Record<string, string>[] = await res.json()
-  const apiDraws = rows.map(r => parseApiRow(game, r))
-
-  const csvText = game === 'powerball' ? pbCsv : mmCsv
-  const csvDraws = parseCsv(game, csvText)
-
-  const draws = mergeAndDedup(csvDraws, apiDraws)
+  const apiDraws = rows.map(r => parseApiRow('powerball', r))
+  const bundled = parseCsv('powerball', pbCsv)
+  const draws = mergeAndDedup(bundled, apiDraws)
   const currentEraDraws = draws.filter(d => d.era === 'current')
-  return { game, draws, currentEraDraws, fetchedAt: Date.now() }
+  return { game: 'powerball', draws, currentEraDraws, fetchedAt: Date.now() }
+}
+
+async function fetchMmData(): Promise<GameData> {
+  const res = await fetch('/api/mm-draws')
+  if (!res.ok) throw new Error(`Mega Millions proxy returned ${res.status}`)
+  const csvText = await res.text()
+  const proxyDraws = parseTxLotteryCsv(csvText)
+  const bundled = parseCsv('megamillions', mmCsv)
+  const draws = mergeAndDedup(bundled, proxyDraws)
+  const currentEraDraws = draws.filter(d => d.era === 'current')
+  return { game: 'megamillions', draws, currentEraDraws, fetchedAt: Date.now() }
 }
 
 type AppState =
@@ -56,7 +59,7 @@ export default function App() {
         setAppState({ status: 'ready', pb: cached.powerball, mm: cached.megamillions })
         return
       }
-      const [pb, mm] = await Promise.all([fetchGameData('powerball'), fetchGameData('megamillions')])
+      const [pb, mm] = await Promise.all([fetchPbData(), fetchMmData()])
       const cacheData: CachedAppData = { powerball: pb, megamillions: mm, cachedAt: Date.now() }
       saveToCache(cacheData)
       setAppState({ status: 'ready', pb, mm })
