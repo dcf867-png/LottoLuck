@@ -10,8 +10,7 @@ import ModeToggle from './ModeToggle'
 import SuggestedPick from './SuggestedPick'
 import AnalysisPanels from './AnalysisPanels'
 import BonusBallChart from './BonusBallChart'
-import NumerologyPick from './NumerologyPick'
-import AstrologyPick from './AstrologyPick'
+import PersonalTab from './PersonalTab'
 import DrawLookup from './DrawLookup'
 import ScoringKey from './ScoringKey'
 import LoadingScreen from './LoadingScreen'
@@ -94,20 +93,13 @@ export default function App() {
           <DrawLookup game={activeGame} draws={gameData.draws} />
           <BonusBallChart game={activeGame} scores={result.bonusScores} />
           <AnalysisPanels game={activeGame} mode={mode} result={result} />
-          <ScoringKey />
-          <footer className="flex justify-center">
-            <div className="panel px-4 py-3 flex flex-col gap-1 text-center text-xs w-full">
-              <span className="text-white/70">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>
-              <span className="text-white/50">For entertainment purposes only.</span>
-            </div>
-          </footer>
+          <ScoringKey drawCount={gameData.currentEraDraws.length} />
         </div>
       )}
 
       {!isGameTab && (
         <div className="deck-shell pb-10">
-          <AstrologyPick />
-          <NumerologyPick />
+          <PersonalTab />
           <footer className="flex justify-center">
             <div className="panel px-4 py-3 text-center text-xs w-full">
               <span className="text-white/50">For entertainment purposes only.</span>

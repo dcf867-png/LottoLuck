@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { GAME_CONFIG } from '../lib/types'
-import { buildNatalChart, type NatalChart } from '../lib/astrology'
+import type { NatalChart } from '../lib/astrology'
 import { generateAstrologyPick } from '../lib/astroLucky'
 
 interface PickPair {
@@ -9,17 +9,8 @@ interface PickPair {
   index: number
 }
 
-async function geocodeCity(query: string): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`
-    const res = await fetch(url, { headers: { Accept: 'application/json' } })
-    if (!res.ok) return null
-    const data: Array<{ lat: string; lon: string }> = await res.json()
-    if (!data.length) return null
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
-  } catch {
-    return null
-  }
+interface Props {
+  chart: NatalChart | null
 }
 
 function Ball({ num, color }: { num: number; color: string }) {
@@ -39,38 +30,16 @@ function ChartBadge({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function AstrologyPick() {
-  const [birthDate, setBirthDate] = useState('')
-  const [birthTime, setBirthTime] = useState('')
-  const [cityState, setCityState] = useState('')
-  const [chart, setChart] = useState<NatalChart | null>(null)
+export default function AstrologyPick({ chart }: Props) {
   const [picks, setPicks] = useState<PickPair[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  async function handleGenerate() {
-    if (!birthDate) { setError('Please enter your date of birth.'); return }
-    setError('')
-    setIsLoading(true)
-    try {
-      let lat: number | undefined
-      let lng: number | undefined
-      if (cityState.trim()) {
-        const coords = await geocodeCity(cityState.trim())
-        if (coords) { lat = coords.lat; lng = coords.lng }
-      }
-      const natal = buildNatalChart(birthDate, birthTime || undefined, lat, lng)
-      setChart(natal)
-      setPicks([{
-        pb: generateAstrologyPick(natal, 'powerball', 0),
-        mm: generateAstrologyPick(natal, 'megamillions', 0),
-        index: 0,
-      }])
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.')
-    } finally {
-      setIsLoading(false)
-    }
+  function handleGenerate() {
+    if (!chart) return
+    setPicks([{
+      pb: generateAstrologyPick(chart, 'powerball', 0),
+      mm: generateAstrologyPick(chart, 'megamillions', 0),
+      index: 0,
+    }])
   }
 
   function handleGenerateAnother() {
@@ -83,6 +52,13 @@ export default function AstrologyPick() {
     }])
   }
 
+  // Reset picks when chart changes
+  const [prevChart, setPrevChart] = useState<NatalChart | null>(null)
+  if (chart !== prevChart) {
+    setPrevChart(chart)
+    if (picks.length > 0) setPicks([])
+  }
+
   const sun = chart?.planets.find(p => p.name === 'Sun')
   const moon = chart?.planets.find(p => p.name === 'Moon')
 
@@ -91,80 +67,16 @@ export default function AstrologyPick() {
       <h3 className="panel-title text-purple-400">
         <span className="dot" />Astrology Pick
       </h3>
-      <p className="text-xs text-gray-400 mb-4">No personal data is collected or shared with anyone.</p>
       <p className="text-xs text-gray-300 mb-4">
         Generate a pick from your natal chart and today's planetary transits.
       </p>
 
-      <div className="flex flex-col gap-3 mb-4">
-        <div>
-          <label className="block text-xs text-gray-200 mb-1">Date of Birth <span className="text-purple-400">*</span></label>
-          <div className="relative">
-            <input
-              type="date"
-              value={birthDate}
-              onChange={e => setBirthDate(e.target.value)}
-              onFocus={e => e.target.select()}
-              className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-purple-500 pr-8"
-            />
-            {birthDate && (
-              <button
-                onClick={() => setBirthDate('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white text-[12px] leading-none"
-                aria-label="Clear date"
-              >×</button>
-            )}
-          </div>
-        </div>
+      {!chart && (
+        <p className="text-xs text-gray-500 text-center py-4">Enter your birth info above to generate a pick.</p>
+      )}
 
-        <div>
-          <label className="block text-xs text-gray-200 mb-1">
-            Birth Time <span className="text-gray-400">(optional — enables rising sign)</span>
-          </label>
-          <div className="relative">
-            <input
-              type="time"
-              value={birthTime}
-              onChange={e => setBirthTime(e.target.value)}
-              onFocus={e => e.target.select()}
-              className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-purple-500 pr-8"
-            />
-            {birthTime && (
-              <button
-                onClick={() => setBirthTime('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white text-[12px] leading-none"
-                aria-label="Clear time"
-              >×</button>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs text-gray-200 mb-1">
-            Birth City / State <span className="text-gray-400">(optional — for rising sign accuracy)</span>
-          </label>
-          <input
-            type="text"
-            value={cityState}
-            onChange={e => setCityState(e.target.value)}
-            placeholder="e.g. Boise, Idaho"
-            className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-purple-500"
-          />
-        </div>
-
-        {error && <p className="text-xs text-red-400">{error}</p>}
-
-        <button
-          onClick={handleGenerate}
-          disabled={isLoading}
-          className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-medium py-2 rounded-lg transition-colors"
-        >
-          {isLoading ? 'Calculating...' : 'Generate My Pick'}
-        </button>
-      </div>
-
-      {chart && picks.length > 0 && (
-        <div className="border-t border-white/10 pt-4 flex flex-col gap-4">
+      {chart && (
+        <div className="flex flex-col gap-4">
           <div>
             <p className="text-xs text-gray-300 mb-2 uppercase tracking-widest">Your Natal Chart</p>
             <div className="grid grid-cols-2 gap-3">
@@ -175,38 +87,49 @@ export default function AstrologyPick() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-            {picks.map((pair, i) => (
-              <div key={pair.index} className="flex flex-col gap-3 bg-black/25 rounded-lg py-3 px-2">
-                <p className="text-xs text-gray-300 uppercase tracking-widest text-center">Pick {i + 1}</p>
+          {picks.length === 0 && (
+            <button
+              onClick={handleGenerate}
+              className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+            >
+              Generate My Pick
+            </button>
+          )}
 
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-xs font-semibold text-red-500">Powerball</span>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {pair.pb.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
-                    <Ball num={pair.pb.bonus} color={GAME_CONFIG.powerball.bonusColor} />
+          {picks.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {picks.map((pair, i) => (
+                <div key={pair.index} className="flex flex-col gap-3 bg-black/25 rounded-lg py-3 px-2">
+                  <p className="text-xs text-gray-300 uppercase tracking-widest text-center">Pick {i + 1}</p>
+
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-semibold text-red-500">Powerball</span>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {pair.pb.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                      <Ball num={pair.pb.bonus} color={GAME_CONFIG.powerball.bonusColor} />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-white/10" />
+
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-semibold text-yellow-400">Mega Millions</span>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {pair.mm.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                      <Ball num={pair.mm.bonus} color={GAME_CONFIG.megamillions.bonusColor} />
+                    </div>
                   </div>
                 </div>
+              ))}
 
-                <div className="border-t border-white/10" />
-
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-xs font-semibold text-yellow-400">Mega Millions</span>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {pair.mm.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
-                    <Ball num={pair.mm.bonus} color={GAME_CONFIG.megamillions.bonusColor} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={handleGenerateAnother}
-            className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors text-center"
-          >
-            Generate another
-          </button>
+              <button
+                onClick={handleGenerateAnother}
+                className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors text-center"
+              >
+                Generate another
+              </button>
+            </div>
+          )}
         </div>
       )}
     </section>

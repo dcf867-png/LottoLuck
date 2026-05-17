@@ -25,9 +25,20 @@ function ProfileBadge({ label, value }: { label: string; value: number }) {
   )
 }
 
-export default function NumerologyPick() {
+interface Props {
+  sharedBirthDate?: string
+}
+
+export default function NumerologyPick({ sharedBirthDate }: Props) {
   const [name, setName] = useState('')
-  const [dob, setDob] = useState('')
+  const [dob, setDob] = useState(sharedBirthDate ?? '')
+
+  // Sync shared birth date into local field if user hasn't set one yet
+  const [prevShared, setPrevShared] = useState(sharedBirthDate)
+  if (sharedBirthDate !== prevShared) {
+    setPrevShared(sharedBirthDate)
+    if (sharedBirthDate) setDob(sharedBirthDate)
+  }
   const [profile, setProfile] = useState<NumerologyProfile | null>(null)
   const [picks, setPicks] = useState<PickPair[]>([])
   const [error, setError] = useState('')
