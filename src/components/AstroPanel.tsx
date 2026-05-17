@@ -32,10 +32,10 @@ const PHASE_ICONS: Record<string, string> = {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 0.70) return 'bg-emerald-500/70 text-white'
-  if (score >= 0.50) return 'bg-yellow-500/60 text-white'
-  if (score >= 0.30) return 'bg-orange-600/50 text-white'
-  return 'bg-white/10 text-white/40'
+  if (score >= 0.78) return 'bg-yellow-400/85 text-gray-900'
+  if (score >= 0.64) return 'bg-green-500/70 text-white'
+  if (score >= 0.52) return 'bg-sky-500/65 text-white'
+  return 'bg-amber-800/70 text-white'
 }
 
 function Stars({ count }: { count: number }) {
@@ -282,7 +282,7 @@ export default function AstroPanel({
 
           {/* Legend */}
           <div className="flex gap-3 flex-wrap justify-center">
-            {[{ color: 'bg-emerald-500/70', label: 'High' }, { color: 'bg-yellow-500/60', label: 'Good' }, { color: 'bg-orange-600/50', label: 'Moderate' }, { color: 'bg-white/10', label: 'Low' }].map(({ color, label }) => (
+            {[{ color: 'bg-yellow-400/85', label: 'High' }, { color: 'bg-green-500/70', label: 'Good' }, { color: 'bg-sky-500/65', label: 'Moderate' }, { color: 'bg-amber-800/70', label: 'Low' }].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-1">
                 <div className={`w-3 h-3 rounded ${color}`} />
                 <span className="text-[10px] text-white/50">{label}</span>
