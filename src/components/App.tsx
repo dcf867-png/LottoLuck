@@ -11,7 +11,7 @@ import SuggestedPick from './SuggestedPick'
 import AnalysisPanels from './AnalysisPanels'
 import BonusBallChart from './BonusBallChart'
 import PersonalTab from './PersonalTab'
-import DrawLookup from './DrawLookup'
+import LatestDraws from './LatestDraws'
 import ScoringKey from './ScoringKey'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
@@ -69,7 +69,7 @@ export default function App() {
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
-    if (tab !== 'personal') {
+    if (tab !== 'personal' && tab !== 'recentdraws') {
       setActiveGame(tab)
       setMode('full')
     }
@@ -80,7 +80,8 @@ export default function App() {
 
   const gameData = activeGame === 'powerball' ? appState.pb : appState.mm
   const result: AnalysisResult = analyze(gameData.currentEraDraws, activeGame)
-  const isGameTab = activeTab !== 'personal'
+  const isGameTab = activeTab === 'powerball' || activeTab === 'megamillions'
+
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -90,14 +91,19 @@ export default function App() {
         <div className="deck-shell pb-10">
           <ModeToggle game={activeGame} mode={mode} onModeChange={setMode} />
           <SuggestedPick game={activeGame} mode={mode} result={result} />
-          <DrawLookup game={activeGame} draws={gameData.draws} />
           <BonusBallChart game={activeGame} scores={result.bonusScores} />
           <AnalysisPanels game={activeGame} mode={mode} result={result} />
           <ScoringKey drawCount={gameData.currentEraDraws.length} />
         </div>
       )}
 
-      {!isGameTab && (
+      {activeTab === 'recentdraws' && (
+        <div className="deck-shell pb-10">
+          <LatestDraws pbDraws={appState.pb.draws} mmDraws={appState.mm.draws} />
+        </div>
+      )}
+
+      {activeTab === 'personal' && (
         <div className="deck-shell pb-10">
           <PersonalTab />
           <footer className="flex justify-center">
