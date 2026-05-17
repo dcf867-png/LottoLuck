@@ -46,8 +46,8 @@ export default function LatestDraws({ pbDraws, mmDraws }: Props) {
   const [date, setDate] = useState('')
   const [lookupResult, setLookupResult] = useState<{ pb: Draw | null; mm: Draw | null } | null>(null)
 
-  const pbRecent = pbDraws.slice(-10).reverse()
-  const mmRecent = mmDraws.slice(-10).reverse()
+  const pbRecent = pbDraws.slice(-5).reverse()
+  const mmRecent = mmDraws.slice(-5).reverse()
 
   function handleLookup() {
     if (!date) return
