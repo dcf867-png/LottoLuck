@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GAME_CONFIG } from '../lib/types'
 import { buildProfile, generateNumerologyPick, type NumerologyProfile } from '../lib/numerology'
+import DateInput from './DateInput'
 
 interface PickPair {
   pb: { whites: number[]; bonus: number }
@@ -85,24 +86,7 @@ export default function NumerologyPick({ sharedBirthDate }: Props) {
             className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-purple-500"
           />
         </div>
-        <div>
-          <label className="block text-xs text-gray-200 mb-1">Date of Birth</label>
-          <div className="relative">
-            <input
-              type="date"
-              value={dob}
-              onChange={e => setDob(e.target.value)}
-              className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-purple-500 pr-8"
-            />
-            {dob && (
-              <button
-                onClick={() => setDob('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white text-[12px] leading-none"
-                aria-label="Clear date"
-              >×</button>
-            )}
-          </div>
-        </div>
+        <DateInput value={dob} onChange={setDob} label="Date of Birth" />
         {error && <p className="text-xs text-red-400">{error}</p>}
         <button
           onClick={handleGenerate}

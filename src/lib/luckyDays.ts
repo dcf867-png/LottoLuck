@@ -106,8 +106,8 @@ export interface DayScore {
   reasons: string[]
 }
 
-export function scoreDays(natal: NatalChart, days = 42): DayScore[] {
-  const today = new Date()
+export function scoreDays(natal: NatalChart, days = 42, startDate?: Date): DayScore[] {
+  const today = startDate ? new Date(startDate) : new Date()
   today.setHours(12, 0, 0, 0)
 
   const natalSun = natal.planets.find(p => p.name === 'Sun')

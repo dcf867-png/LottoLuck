@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { GAME_CONFIG } from '../lib/types'
 import type { NatalChart } from '../lib/astrology'
 import { generateAstrologyPick } from '../lib/astroLucky'
 import { scoreDays, toDateStr, type DayScore } from '../lib/luckyDays'
+import DateInput from './DateInput'
 
 interface PickPair {
   pb: { whites: number[]; bonus: number }
@@ -77,6 +78,10 @@ export default function AstroPanel({
   const [viewMonth, setViewMonth] = useState(today.getMonth())
   const [selected, setSelected] = useState<string | null>(null)
 
+  // Score cache
+  const scoreCacheRef = useRef<Map<string, DayScore>>(new Map())
+  const [cacheVersion, setCacheVersion] = useState(0)
+
   // Picks state
   const [picks, setPicks] = useState<PickPair[]>([])
   const [prevChart, setPrevChart] = useState<NatalChart | null>(null)
@@ -84,12 +89,35 @@ export default function AstroPanel({
     setPrevChart(chart)
     if (picks.length > 0) setPicks([])
     setSelected(null)
+    scoreCacheRef.current.clear()
+    setCacheVersion(0)
   }
 
-  const scoreMap = useMemo<Map<string, DayScore>>(() => {
-    if (!chart) return new Map()
-    return new Map(scoreDays(chart, 42).map(s => [s.date, s]))
-  }, [chart])
+  useEffect(() => {
+    if (!chart) return
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const firstOfMonth = new Date(viewYear, viewMonth, 1)
+    const lastOfMonth = new Date(viewYear, viewMonth + 1, 0)
+    if (lastOfMonth < now) return
+
+    const startDate = firstOfMonth < now ? new Date(now) : new Date(firstOfMonth)
+    let allCached = true
+    const check = new Date(startDate)
+    while (check <= lastOfMonth) {
+      if (!scoreCacheRef.current.has(toDateStr(check))) { allCached = false; break }
+      check.setDate(check.getDate() + 1)
+    }
+    if (allCached) return
+
+    const daysToScore = Math.ceil((lastOfMonth.getTime() - startDate.getTime()) / 86400000) + 1
+    for (const s of scoreDays(chart, daysToScore, startDate)) {
+      scoreCacheRef.current.set(s.date, s)
+    }
+    setCacheVersion(v => v + 1)
+  }, [chart, viewYear, viewMonth])
+
+  const scoreMap = useMemo(() => new Map(scoreCacheRef.current), [cacheVersion])
 
   const top5 = useMemo(() => {
     const future = [...scoreMap.values()].filter(s => s.date > todayStr)
@@ -151,22 +179,7 @@ export default function AstroPanel({
       {/* Birth info form */}
       <p className="text-xs text-gray-400 mb-3">No personal data is collected or shared with anyone.</p>
       <div className="flex flex-col gap-3 mb-4">
-        <div>
-          <label className="block text-xs text-gray-200 mb-1">
-            Date of Birth <span className="text-purple-400">*</span>
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              value={birthDate}
-              onChange={e => onBirthDateChange(e.target.value)}
-              className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-purple-500 pr-8"
-            />
-            {birthDate && (
-              <button onClick={() => onBirthDateChange('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white text-[12px] leading-none" aria-label="Clear date">×</button>
-            )}
-          </div>
-        </div>
+        <DateInput value={birthDate} onChange={onBirthDateChange} label="Date of Birth" required />
         <div>
           <label className="block text-xs text-gray-200 mb-1">
             Birth Time <span className="text-gray-400">(optional — enables rising sign)</span>
