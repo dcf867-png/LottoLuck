@@ -54,11 +54,39 @@ function Ball({ num, color }: { num: number; color: string }) {
   )
 }
 
-function ChartBadge({ label, value }: { label: string; value: string }) {
+const SIGN_SYMBOLS: Record<string, string> = {
+  Aries: '♈', Taurus: '♉', Gemini: '♊', Cancer: '♋',
+  Leo: '♌', Virgo: '♍', Libra: '♎', Scorpio: '♏',
+  Sagittarius: '♐', Capricorn: '♑', Aquarius: '♒', Pisces: '♓',
+}
+
+const SIGN_COLORS: Record<string, string> = {
+  Aries: 'text-red-400',
+  Taurus: 'text-emerald-500',
+  Gemini: 'text-yellow-300',
+  Cancer: 'text-slate-300',
+  Leo: 'text-orange-400',
+  Virgo: 'text-amber-500',
+  Libra: 'text-pink-400',
+  Scorpio: 'text-red-700',
+  Sagittarius: 'text-purple-400',
+  Capricorn: 'text-gray-400',
+  Aquarius: 'text-blue-400',
+  Pisces: 'text-indigo-400',
+}
+
+function ChartBadge({ label, value, planetSymbol, symbolColor = 'text-purple-400' }: { label: string; value: string; planetSymbol?: string; symbolColor?: string }) {
+  const signSymbol = SIGN_SYMBOLS[value]
+  const signColor = SIGN_COLORS[value] ?? 'text-purple-300'
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="text-xs text-gray-300">{label}</span>
-      <span className="text-sm font-bold text-purple-300">{value}</span>
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-sm text-gray-300 flex items-center gap-1">
+        {planetSymbol && <span className={`${symbolColor} text-2xl leading-none`}>{planetSymbol}</span>}
+        {label}
+      </span>
+      <span className={`text-base font-bold ${signColor}`}>
+        {signSymbol && <span className="mr-0.5">{signSymbol}</span>}{value}
+      </span>
     </div>
   )
 }
@@ -87,10 +115,14 @@ export default function AstroPanel({
   const [prevChart, setPrevChart] = useState<NatalChart | null>(null)
   if (chart !== prevChart) {
     setPrevChart(chart)
-    if (picks.length > 0) setPicks([])
     setSelected(null)
     scoreCacheRef.current.clear()
     setCacheVersion(0)
+    if (chart) {
+      setPicks([{ pb: generateAstrologyPick(chart, 'powerball', 0), mm: generateAstrologyPick(chart, 'megamillions', 0), index: 0 }])
+    } else {
+      setPicks([])
+    }
   }
 
   useEffect(() => {
@@ -157,10 +189,6 @@ export default function AstroPanel({
     return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
-  function handleGenerate() {
-    if (!chart) return
-    setPicks([{ pb: generateAstrologyPick(chart, 'powerball', 0), mm: generateAstrologyPick(chart, 'megamillions', 0), index: 0 }])
-  }
   function handleGenerateAnother() {
     if (!chart) return
     const nextIndex = picks.length
@@ -214,11 +242,46 @@ export default function AstroPanel({
           disabled={isLoading}
           className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-medium py-2 rounded-lg transition-colors"
         >
-          {isLoading ? 'Calculating...' : 'Generate My Charts'}
+          {isLoading ? 'Calculating...' : 'Generate My Pick/Charts'}
         </button>
       </div>
 
       <div className="flex flex-col gap-5">
+
+        {/* Astrology Pick — auto-generated above natal chart */}
+        {chart && picks.length > 0 && (
+          <>
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] uppercase tracking-[3px] text-purple-400 text-center">Astrology Pick</p>
+              <div className="flex flex-col gap-3">
+                {picks.map((pair, i) => (
+                  <div key={pair.index} className="flex flex-col gap-3 bg-black/25 rounded-lg py-3 px-2">
+                    <p className="text-xs text-gray-300 uppercase tracking-widest text-center">Pick {i + 1}</p>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-semibold text-red-500">Powerball</span>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {pair.pb.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                        <Ball num={pair.pb.bonus} color={GAME_CONFIG.powerball.bonusColor} />
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10" />
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-semibold text-yellow-400">Mega Millions</span>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {pair.mm.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
+                        <Ball num={pair.mm.bonus} color={GAME_CONFIG.megamillions.bonusColor} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={handleGenerateAnother} className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors text-center">
+                  Generate another
+                </button>
+              </div>
+            </div>
+            <div className="border-t border-white/10" />
+          </>
+        )}
 
         {/* Natal chart badges — only after chart is generated */}
         {chart && (
@@ -226,9 +289,9 @@ export default function AstroPanel({
             <div>
               <p className="text-xs text-gray-300 mb-2 uppercase tracking-widest">Your Natal Chart</p>
               <div className="grid grid-cols-2 gap-3">
-                {sun && <ChartBadge label="Sun" value={sun.sign} />}
-                {moon && <ChartBadge label="Moon" value={moon.sign} />}
-                {chart.ascendant && <ChartBadge label="Rising" value={chart.ascendant.sign} />}
+                {sun && <ChartBadge label="Sun" value={sun.sign} planetSymbol="☀" symbolColor="text-yellow-400" />}
+                {moon && <ChartBadge label="Moon" value={moon.sign} planetSymbol="☽" symbolColor="text-blue-400" />}
+                {chart.ascendant && <ChartBadge label="Rising" value={chart.ascendant.sign} planetSymbol="↑" />}
                 <ChartBadge label="Moon Phase" value={chart.todayMoonPhaseName} />
               </div>
             </div>
@@ -346,51 +409,6 @@ export default function AstroPanel({
             </div>
           )}
         </div>
-
-        {/* Astrology Pick — only after chart is generated */}
-        {chart && (
-          <>
-            <div className="border-t border-white/10" />
-            <div className="flex flex-col gap-3">
-              <p className="text-[10px] uppercase tracking-[3px] text-purple-400 text-center">Astrology Pick</p>
-              <p className="text-xs text-gray-400">Generate a pick from your natal chart and today's planetary transits.</p>
-
-              {picks.length === 0 && (
-                <button onClick={handleGenerate} className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium py-2 rounded-lg transition-colors">
-                  Generate My Pick
-                </button>
-              )}
-
-              {picks.length > 0 && (
-                <div className="flex flex-col gap-3">
-                  {picks.map((pair, i) => (
-                    <div key={pair.index} className="flex flex-col gap-3 bg-black/25 rounded-lg py-3 px-2">
-                      <p className="text-xs text-gray-300 uppercase tracking-widest text-center">Pick {i + 1}</p>
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs font-semibold text-red-500">Powerball</span>
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {pair.pb.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
-                          <Ball num={pair.pb.bonus} color={GAME_CONFIG.powerball.bonusColor} />
-                        </div>
-                      </div>
-                      <div className="border-t border-white/10" />
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs font-semibold text-yellow-400">Mega Millions</span>
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {pair.mm.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
-                          <Ball num={pair.mm.bonus} color={GAME_CONFIG.megamillions.bonusColor} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <button onClick={handleGenerateAnother} className="text-xs text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors text-center">
-                    Generate another
-                  </button>
-                </div>
-              )}
-            </div>
-          </>
-        )}
 
       </div>
     </section>
