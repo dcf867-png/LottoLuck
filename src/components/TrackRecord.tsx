@@ -11,28 +11,39 @@ import {
 } from '../lib/trackRecord'
 
 const PB_TIERS = [
-  { match: '5 + Powerball', prize: 'JACKPOT' },
-  { match: '5', prize: '$1,000,000' },
-  { match: '4 + Powerball', prize: '$50,000' },
-  { match: '4', prize: '$100' },
-  { match: '3 + Powerball', prize: '$100' },
-  { match: '3', prize: '$7' },
-  { match: '2 + Powerball', prize: '$7' },
-  { match: '1 + Powerball', prize: '$4' },
-  { match: 'Powerball only', prize: '$4' },
+  { whites: 5, bonus: true,  match: '5 + Powerball',  prize: 'JACKPOT' },
+  { whites: 5, bonus: false, match: '5',               prize: '$1,000,000' },
+  { whites: 4, bonus: true,  match: '4 + Powerball',  prize: '$50,000' },
+  { whites: 4, bonus: false, match: '4',               prize: '$100' },
+  { whites: 3, bonus: true,  match: '3 + Powerball',  prize: '$100' },
+  { whites: 3, bonus: false, match: '3',               prize: '$7' },
+  { whites: 2, bonus: true,  match: '2 + Powerball',  prize: '$7' },
+  { whites: 1, bonus: true,  match: '1 + Powerball',  prize: '$4' },
+  { whites: 0, bonus: true,  match: 'Powerball only',  prize: '$4' },
 ]
 
 const MM_TIERS = [
-  { match: '5 + Mega Ball', prize: 'JACKPOT' },
-  { match: '5', prize: '$1,000,000' },
-  { match: '4 + Mega Ball', prize: '$10,000' },
-  { match: '4', prize: '$500' },
-  { match: '3 + Mega Ball', prize: '$200' },
-  { match: '3', prize: '$10' },
-  { match: '2 + Mega Ball', prize: '$10' },
-  { match: '1 + Mega Ball', prize: '$4' },
-  { match: 'Mega Ball only', prize: '$2' },
+  { whites: 5, bonus: true,  match: '5 + Mega Ball',  prize: 'JACKPOT' },
+  { whites: 5, bonus: false, match: '5',               prize: '$1,000,000' },
+  { whites: 4, bonus: true,  match: '4 + Mega Ball',  prize: '$10,000' },
+  { whites: 4, bonus: false, match: '4',               prize: '$500' },
+  { whites: 3, bonus: true,  match: '3 + Mega Ball',  prize: '$200' },
+  { whites: 3, bonus: false, match: '3',               prize: '$10' },
+  { whites: 2, bonus: true,  match: '2 + Mega Ball',  prize: '$10' },
+  { whites: 1, bonus: true,  match: '1 + Mega Ball',  prize: '$4' },
+  { whites: 0, bonus: true,  match: 'Mega Ball only',  prize: '$2' },
 ]
+
+function MiniBalls({ whites, bonus, bonusColor }: { whites: number; bonus: boolean; bonusColor: string }) {
+  return (
+    <span className="inline-flex items-center gap-px mr-1.5 shrink-0">
+      {Array.from({ length: whites }).map((_, i) => (
+        <span key={i} className="inline-block w-2 h-2 rounded-full bg-white/70" />
+      ))}
+      {bonus && <span className={`inline-block w-2 h-2 rounded-full ${bonusColor} ml-px`} />}
+    </span>
+  )
+}
 
 function PrizeLegend() {
   const [open, setOpen] = useState(false)
@@ -55,8 +66,11 @@ function PrizeLegend() {
               <div className="flex flex-col gap-1">
                 {PB_TIERS.map(t => (
                   <div key={t.match} className="flex justify-between gap-2 text-[10px]">
-                    <span className="text-gray-400">{t.match}</span>
-                    <span className={t.prize === 'JACKPOT' ? 'text-yellow-400 font-bold' : 'text-white font-medium'}>{t.prize}</span>
+                    <span className="text-gray-400 flex items-center">
+                      <MiniBalls whites={t.whites} bonus={t.bonus} bonusColor="bg-red-600" />
+                      {t.match}
+                    </span>
+                    <span className={t.prize === 'JACKPOT' ? 'text-red-500 font-bold' : 'text-white font-medium'}>{t.prize}</span>
                   </div>
                 ))}
               </div>
@@ -67,7 +81,10 @@ function PrizeLegend() {
               <div className="flex flex-col gap-1">
                 {MM_TIERS.map(t => (
                   <div key={t.match} className="flex justify-between gap-2 text-[10px]">
-                    <span className="text-gray-400">{t.match}</span>
+                    <span className="text-gray-400 flex items-center">
+                      <MiniBalls whites={t.whites} bonus={t.bonus} bonusColor="bg-yellow-400" />
+                      {t.match}
+                    </span>
                     <span className={t.prize === 'JACKPOT' ? 'text-yellow-400 font-bold' : 'text-white font-medium'}>{t.prize}</span>
                   </div>
                 ))}
