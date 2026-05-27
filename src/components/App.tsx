@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import AuthModal from './AuthModal'
+import UserProfile from './UserProfile'
 import pbCsv from '../data/powerball-1992-2009.csv?raw'
 import mmCsv from '../data/megamillions-1996-2001.csv?raw'
 import { parseCsv, parseApiRow, mergeAndDedup } from '../lib/parse'
@@ -109,6 +110,12 @@ export default function App() {
       {activeTab === 'trackrecord' && (
         <div className="deck-shell pb-10">
           <TrackRecord pbDraws={appState.pb.draws} mmDraws={appState.mm.draws} />
+        </div>
+      )}
+
+      {activeTab === 'profile' && (
+        <div className="deck-shell pb-10">
+          <UserProfile />
         </div>
       )}
 
