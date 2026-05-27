@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { buildNatalChart, type NatalChart } from '../lib/astrology'
 import AstroPanel from './AstroPanel'
 import NumerologyPick from './NumerologyPick'
