@@ -18,7 +18,7 @@ export default function BonusBallChart({ game, scores }: Props) {
         <span className="dot" />{cfg.bonusLabel} Frequency
       </h2>
 
-      <div className="flex items-end gap-px h-24 overflow-x-auto pb-1">
+      <div className="flex items-end gap-px h-36 overflow-x-auto pb-1">
         {sorted.map(s => {
           const pct = s.appearances / maxApp
           return (
