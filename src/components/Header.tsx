@@ -49,6 +49,13 @@ export default function Header({ activeTab, onTabChange, onAuthClick }: Props) {
           <div className="flex items-center gap-3">
             <span className="text-xs text-gray-400 truncate max-w-[160px]">{user.email}</span>
             <button
+              onClick={() => onTabChange('profile')}
+              className={`text-sm px-2 py-1 rounded-full transition-colors ${activeTab === 'profile' ? 'bg-indigo-600' : 'bg-blue-600/30 hover:bg-blue-600/50'}`}
+              title="My Profile"
+            >
+              👤
+            </button>
+            <button
               onClick={signOut}
               className="text-xs text-gray-400 hover:text-white transition-colors"
             >
@@ -68,7 +75,7 @@ export default function Header({ activeTab, onTabChange, onAuthClick }: Props) {
         Lotto<span className="logo-glow">Pulse</span>
       </h1>
       <div className="flex flex-wrap justify-center gap-2">
-        {(['powerball', 'megamillions', 'recentdraws', 'personal', 'trackrecord', ...(user ? ['profile' as Tab] : [])] as Tab[]).map(tab => (
+        {(['powerball', 'megamillions', 'recentdraws', 'personal', 'trackrecord'] as Tab[]).map(tab => (
           <button
             key={tab}
             onClick={() => onTabChange(tab)}
@@ -78,7 +85,6 @@ export default function Header({ activeTab, onTabChange, onAuthClick }: Props) {
               : tab === 'megamillions' ? 'Mega Millions'
               : tab === 'recentdraws' ? 'Recent Draws'
               : tab === 'trackrecord' ? 'Track Record'
-              : tab === 'profile' ? '👤 Profile'
               : 'Lucky Star Picks'}
           </button>
         ))}
