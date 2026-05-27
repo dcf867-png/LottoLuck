@@ -97,13 +97,17 @@ export function generateNumerologyPick(
   // Flatten master numbers to single digit for range math
   const flatten = (n: number) => (n > 9 ? digitSum(n) || 1 : n) || 1
 
-  const seeds = [
+  const allSeeds = [
     flatten(profile.lifePath),
     flatten(profile.expression),
     flatten(profile.soulUrge),
     flatten(profile.birthday),
     flatten(profile.personalYear),
   ]
+
+  // Rotate seed order per game so PB and MM draw from different numerology numbers
+  const rotation = game === 'powerball' ? 0 : 2
+  const seeds = [...allSeeds.slice(rotation), ...allSeeds.slice(0, rotation)]
 
   // personalDay shifts the pick daily so each day yields a fresh set
   const dailyShift = flatten(profile.personalDay)
@@ -112,7 +116,8 @@ export function generateNumerologyPick(
   const whites = seeds.map((seed, i) => pickInZone(seed, i, whiteMax, effectiveVariation))
   whites.sort((a, b) => a - b)
 
-  const bonusSeed = seeds.reduce((a, b) => a + b, 0) + effectiveVariation * 7
+  const gameBonusSalt = game === 'powerball' ? 0 : 11
+  const bonusSeed = seeds.reduce((a, b) => a + b, 0) + effectiveVariation * 7 + gameBonusSalt
   const bonus = (bonusSeed % bonusMax) + 1
 
   return { whites, bonus }

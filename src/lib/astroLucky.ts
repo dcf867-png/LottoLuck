@@ -45,7 +45,12 @@ export function generateAstrologyPick(
   const allNatal = [...natal.planets]
   if (natal.ascendant) allNatal.push(natal.ascendant)
 
-  allNatal.forEach((planet, idx) => {
+  // Rotate planet order per game so each game emphasises different planets
+  const rotated = game === 'powerball'
+    ? allNatal
+    : [...allNatal.slice(2), ...allNatal.slice(0, 2)]
+
+  rotated.forEach((planet, idx) => {
     const base = lonToAnchor(planet.lon, whiteMax)
     const varShift = (variation * (idx + 1) * 7) % whiteMax
     const anchor = ((base + varShift - 1) % whiteMax) + 1
@@ -65,9 +70,11 @@ export function generateAstrologyPick(
     scores[n] += pos * phaseBias
   }
 
-  // Variation perturbation: break ties differently each call
+  // Game-specific perturbation so PB and MM scores diverge
+  const gameSalt = game === 'powerball' ? 0 : 53
   for (let n = 1; n <= whiteMax; n++) {
-    scores[n] += 0.4 * Math.sin((n + variation * 13) * 37 * DEG)
+    scores[n] += 0.4 * Math.sin((n + variation * 13 + gameSalt) * 37 * DEG)
+    scores[n] += 0.25 * Math.cos((n + gameSalt) * 19 * DEG)
   }
 
   // Pick the highest-scoring number from each of 5 equal zones to guarantee spread
