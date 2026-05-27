@@ -20,6 +20,9 @@ export default function UserProfile() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -61,9 +64,14 @@ export default function UserProfile() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return
-    // Delete profile (cascades to auth user via DB trigger)
-    await supabase.from('profiles').delete().eq('id', user!.id)
+    setDeleting(true)
+    setDeleteError('')
+    const { error } = await supabase.rpc('delete_user')
+    if (error) {
+      setDeleteError('Failed to delete account. Please try again.')
+      setDeleting(false)
+      return
+    }
     await supabase.auth.signOut()
   }
 
@@ -151,13 +159,43 @@ export default function UserProfile() {
       {/* Danger zone */}
       <section className="panel border border-red-900/40">
         <h3 className="text-sm font-semibold text-red-400 mb-3">Danger Zone</h3>
-        <p className="text-xs text-gray-400 mb-3">Permanently delete your account and all associated data. This cannot be undone.</p>
-        <button
-          onClick={handleDeleteAccount}
-          className="text-xs text-red-400 hover:text-red-300 border border-red-900/50 hover:border-red-700 px-4 py-2 rounded-lg transition-colors"
-        >
-          Delete My Account
-        </button>
+        <p className="text-xs text-gray-400 mb-3">
+          Permanently delete your account and all associated data. This cannot be undone.
+        </p>
+
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="text-xs text-red-400 hover:text-red-300 border border-red-900/50 hover:border-red-700 px-4 py-2 rounded-lg transition-colors"
+          >
+            Delete My Account
+          </button>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <p className="text-xs text-red-300 bg-red-950/40 border border-red-900/50 rounded-lg px-3 py-2">
+              ⚠️ This will permanently delete your account and all saved data. Are you sure?
+            </p>
+            {deleteError && (
+              <p className="text-xs text-red-400">{deleteError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="flex-1 text-xs bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                {deleting ? 'Deleting...' : 'Yes, delete my account'}
+              </button>
+              <button
+                onClick={() => { setConfirmDelete(false); setDeleteError('') }}
+                disabled={deleting}
+                className="flex-1 text-xs bg-white/10 hover:bg-white/20 disabled:opacity-50 text-gray-300 px-4 py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   )
