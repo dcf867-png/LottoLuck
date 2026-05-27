@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { GAME_CONFIG } from '../lib/types'
+import type { Game } from '../lib/types'
 import type { NatalChart } from '../lib/astrology'
 import { generateAstrologyPick } from '../lib/astroLucky'
+import { savePick } from '../lib/trackRecord'
 
 interface PickPair {
   pb: { whites: number[]; bonus: number }
@@ -30,8 +32,25 @@ function ChartBadge({ label, value }: { label: string; value: string }) {
   )
 }
 
+function SaveButton({ saved, onClick }: { saved: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={saved}
+      className={`text-[10px] mt-1 px-3 py-1 rounded-full transition-colors ${
+        saved
+          ? 'bg-green-800 text-green-300 cursor-default'
+          : 'bg-gray-700 hover:bg-teal-700 text-gray-300 hover:text-white'
+      }`}
+    >
+      {saved ? '✓ Saved to Track Record' : 'Save to Track Record'}
+    </button>
+  )
+}
+
 export default function AstrologyPick({ chart }: Props) {
   const [picks, setPicks] = useState<PickPair[]>([])
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set())
 
   function handleGenerate() {
     if (!chart) return
@@ -52,11 +71,21 @@ export default function AstrologyPick({ chart }: Props) {
     }])
   }
 
+  function handleSave(index: number, game: Game, whites: number[], bonus: number) {
+    const key = `${index}-${game}`
+    if (savedKeys.has(key)) return
+    savePick({ source: 'astrology', game, whites, bonus })
+    setSavedKeys(prev => new Set(prev).add(key))
+  }
+
   // Reset picks when chart changes
   const [prevChart, setPrevChart] = useState<NatalChart | null>(null)
   if (chart !== prevChart) {
     setPrevChart(chart)
-    if (picks.length > 0) setPicks([])
+    if (picks.length > 0) {
+      setPicks([])
+      setSavedKeys(new Set())
+    }
   }
 
   const sun = chart?.planets.find(p => p.name === 'Sun')
@@ -108,6 +137,10 @@ export default function AstrologyPick({ chart }: Props) {
                       {pair.pb.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
                       <Ball num={pair.pb.bonus} color={GAME_CONFIG.powerball.bonusColor} />
                     </div>
+                    <SaveButton
+                      saved={savedKeys.has(`${pair.index}-powerball`)}
+                      onClick={() => handleSave(pair.index, 'powerball', pair.pb.whites, pair.pb.bonus)}
+                    />
                   </div>
 
                   <div className="border-t border-white/10" />
@@ -118,6 +151,10 @@ export default function AstrologyPick({ chart }: Props) {
                       {pair.mm.whites.map(n => <Ball key={n} num={n} color="bg-gray-700" />)}
                       <Ball num={pair.mm.bonus} color={GAME_CONFIG.megamillions.bonusColor} />
                     </div>
+                    <SaveButton
+                      saved={savedKeys.has(`${pair.index}-megamillions`)}
+                      onClick={() => handleSave(pair.index, 'megamillions', pair.mm.whites, pair.mm.bonus)}
+                    />
                   </div>
                 </div>
               ))}

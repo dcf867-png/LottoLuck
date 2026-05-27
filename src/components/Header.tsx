@@ -32,6 +32,7 @@ function tabActiveClass(tab: Tab, active: Tab): string {
   if (tab === 'powerball') return 'bg-red-600 text-white'
   if (tab === 'megamillions') return 'bg-yellow-500 text-white'
   if (tab === 'recentdraws') return 'bg-orange-600 text-white'
+  if (tab === 'trackrecord') return 'bg-teal-600 text-white'
   return 'bg-purple-600 text-white'
 }
 
@@ -42,7 +43,7 @@ export default function Header({ activeTab, onTabChange }: Props) {
         Lotto<span className="logo-glow">Pulse</span>
       </h1>
       <div className="flex gap-2">
-        {(['powerball', 'megamillions', 'recentdraws', 'personal'] as Tab[]).map(tab => (
+        {(['powerball', 'megamillions', 'recentdraws', 'personal', 'trackrecord'] as Tab[]).map(tab => (
           <button
             key={tab}
             onClick={() => onTabChange(tab)}
@@ -51,6 +52,7 @@ export default function Header({ activeTab, onTabChange }: Props) {
             {tab === 'powerball' ? 'Powerball'
               : tab === 'megamillions' ? 'Mega Millions'
               : tab === 'recentdraws' ? 'Recent Draws'
+              : tab === 'trackrecord' ? 'Track Record'
               : 'Lucky Star Picks'}
           </button>
         ))}

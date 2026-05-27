@@ -1,5 +1,5 @@
 export type Game = 'powerball' | 'megamillions'
-export type Tab = Game | 'personal' | 'recentdraws'
+export type Tab = Game | 'personal' | 'recentdraws' | 'trackrecord'
 export type Mode = 'full' | 'bonus'
 export type Era = 'current' | 'legacy'
 
@@ -46,6 +46,15 @@ export interface CachedAppData {
   powerball: GameData
   megamillions: GameData
   cachedAt: number  // unix ms
+}
+
+export interface SavedPick {
+  id: string          // unique ID (timestamp + random)
+  savedAt: string     // 'YYYY-MM-DD' — date pick was saved
+  source: 'astrology' | 'numerology'
+  game: Game
+  whites: number[]    // 5 numbers sorted ascending
+  bonus: number
 }
 
 export interface AnalysisResult {

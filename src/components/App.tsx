@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import pbCsv from '../data/powerball-1992-2009.csv?raw'
 import mmCsv from '../data/megamillions-1996-2001.csv?raw'
 import { parseCsv, parseApiRow, mergeAndDedup } from '../lib/parse'
@@ -10,8 +10,9 @@ import ModeToggle from './ModeToggle'
 import SuggestedPick from './SuggestedPick'
 import AnalysisPanels from './AnalysisPanels'
 import BonusBallChart from './BonusBallChart'
-import PersonalTab from './PersonalTab'
+import PersonalTab, { type PersonalTabState } from './PersonalTab'
 import LatestDraws from './LatestDraws'
+import TrackRecord from './TrackRecord'
 import ScoringKey from './ScoringKey'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
@@ -45,6 +46,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('powerball')
   const [activeGame, setActiveGame] = useState<Game>('powerball')
   const [mode, setMode] = useState<Mode>('full')
+  const personalStateRef = useRef<PersonalTabState>({})
 
   const load = useCallback(async () => {
     setAppState({ status: 'loading' })
@@ -67,7 +69,7 @@ export default function App() {
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
-    if (tab !== 'personal' && tab !== 'recentdraws') {
+    if (tab !== 'personal' && tab !== 'recentdraws' && tab !== 'trackrecord') {
       setActiveGame(tab)
       setMode('full')
     }
@@ -101,9 +103,15 @@ export default function App() {
         </div>
       )}
 
+      {activeTab === 'trackrecord' && (
+        <div className="deck-shell pb-10">
+          <TrackRecord pbDraws={appState.pb.draws} mmDraws={appState.mm.draws} />
+        </div>
+      )}
+
       {activeTab === 'personal' && (
         <div className="deck-shell pb-10">
-          <PersonalTab />
+          <PersonalTab stateRef={personalStateRef} />
           <footer className="flex justify-center">
             <div className="panel px-4 py-3 text-center text-xs w-full">
               <span className="text-white/50">For entertainment purposes only.</span>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { buildNatalChart, type NatalChart } from '../lib/astrology'
 import AstroPanel from './AstroPanel'
 import NumerologyPick from './NumerologyPick'
@@ -16,13 +16,29 @@ async function geocodeCity(query: string): Promise<{ lat: number; lng: number } 
   }
 }
 
-export default function PersonalTab() {
-  const [birthDate, setBirthDate] = useState('')
-  const [birthTime, setBirthTime] = useState('')
-  const [cityState, setCityState] = useState('')
-  const [chart, setChart] = useState<NatalChart | null>(null)
+export interface PersonalTabState {
+  birthDate?: string
+  birthTime?: string
+  cityState?: string
+  chart?: NatalChart | null
+}
+
+interface Props {
+  stateRef: React.MutableRefObject<PersonalTabState>
+}
+
+export default function PersonalTab({ stateRef }: Props) {
+  const [birthDate, setBirthDate] = useState(stateRef.current.birthDate ?? '')
+  const [birthTime, setBirthTime] = useState(stateRef.current.birthTime ?? '')
+  const [cityState, setCityState] = useState(stateRef.current.cityState ?? '')
+  const [chart, setChart] = useState<NatalChart | null>(stateRef.current.chart ?? null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Persist state into the ref so it survives unmount
+  function persist(patch: Partial<PersonalTabState>) {
+    Object.assign(stateRef.current, patch)
+  }
 
   async function handleGenerate() {
     if (!birthDate) { setError('Please enter your date of birth.'); return }
@@ -35,7 +51,9 @@ export default function PersonalTab() {
         const coords = await geocodeCity(cityState.trim())
         if (coords) { lat = coords.lat; lng = coords.lng }
       }
-      setChart(buildNatalChart(birthDate, birthTime || undefined, lat, lng))
+      const newChart = buildNatalChart(birthDate, birthTime || undefined, lat, lng)
+      setChart(newChart)
+      persist({ chart: newChart })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong.')
     } finally {
@@ -50,9 +68,9 @@ export default function PersonalTab() {
         birthDate={birthDate}
         birthTime={birthTime}
         cityState={cityState}
-        onBirthDateChange={setBirthDate}
-        onBirthTimeChange={setBirthTime}
-        onCityStateChange={setCityState}
+        onBirthDateChange={v => { setBirthDate(v); persist({ birthDate: v }) }}
+        onBirthTimeChange={v => { setBirthTime(v); persist({ birthTime: v }) }}
+        onCityStateChange={v => { setCityState(v); persist({ cityState: v }) }}
         onGenerate={handleGenerate}
         isLoading={isLoading}
         error={error}

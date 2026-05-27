@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { GAME_CONFIG } from '../lib/types'
 import type { NatalChart } from '../lib/astrology'
 import { generateAstrologyPick } from '../lib/astroLucky'
+import { savePick } from '../lib/trackRecord'
 import { scoreDays, toDateStr, type DayScore } from '../lib/luckyDays'
 import DateInput from './DateInput'
 
@@ -119,7 +120,11 @@ export default function AstroPanel({
     scoreCacheRef.current.clear()
     setCacheVersion(0)
     if (chart) {
-      setPicks([{ pb: generateAstrologyPick(chart, 'powerball', 0), mm: generateAstrologyPick(chart, 'megamillions', 0), index: 0 }])
+      const pb = generateAstrologyPick(chart, 'powerball', 0)
+      const mm = generateAstrologyPick(chart, 'megamillions', 0)
+      setPicks([{ pb, mm, index: 0 }])
+      savePick({ source: 'astrology', game: 'powerball', whites: pb.whites, bonus: pb.bonus })
+      savePick({ source: 'astrology', game: 'megamillions', whites: mm.whites, bonus: mm.bonus })
     } else {
       setPicks([])
     }
@@ -192,7 +197,11 @@ export default function AstroPanel({
   function handleGenerateAnother() {
     if (!chart) return
     const nextIndex = picks.length
-    setPicks(prev => [...prev, { pb: generateAstrologyPick(chart, 'powerball', nextIndex), mm: generateAstrologyPick(chart, 'megamillions', nextIndex), index: nextIndex }])
+    const pb = generateAstrologyPick(chart, 'powerball', nextIndex)
+    const mm = generateAstrologyPick(chart, 'megamillions', nextIndex)
+    setPicks(prev => [...prev, { pb, mm, index: nextIndex }])
+    savePick({ source: 'astrology', game: 'powerball', whites: pb.whites, bonus: pb.bonus })
+    savePick({ source: 'astrology', game: 'megamillions', whites: mm.whites, bonus: mm.bonus })
   }
 
   const sun = chart?.planets.find(p => p.name === 'Sun')
