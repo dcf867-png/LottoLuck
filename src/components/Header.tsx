@@ -1,9 +1,11 @@
 import type { Game, Tab } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
+import { useAuth } from '../contexts/AuthContext'
 
 interface Props {
   activeTab: Tab
   onTabChange: (t: Tab) => void
+  onAuthClick: () => void
 }
 
 // Powerball: Mon(1), Wed(3), Sat(6) — Mega Millions: Tue(2), Fri(5)
@@ -36,9 +38,31 @@ function tabActiveClass(tab: Tab, active: Tab): string {
   return 'bg-purple-600 text-white'
 }
 
-export default function Header({ activeTab, onTabChange }: Props) {
+export default function Header({ activeTab, onTabChange, onAuthClick }: Props) {
+  const { user, signOut } = useAuth()
+
   return (
     <header className="flex flex-col items-center gap-4 py-6 px-4">
+      <div className="w-full flex items-center justify-end px-2 -mb-2">
+        {user ? (
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 truncate max-w-[160px]">{user.email}</span>
+            <button
+              onClick={signOut}
+              className="text-xs text-gray-400 hover:text-white transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onAuthClick}
+            className="text-xs bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-full transition-colors"
+          >
+            Sign in
+          </button>
+        )}
+      </div>
       <h1 className="logo-text">
         Lotto<span className="logo-glow">Pulse</span>
       </h1>
