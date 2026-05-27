@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import type { Draw, Game, SavedPick } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
 import {
@@ -9,6 +9,77 @@ import {
   prizeTier,
   type DrawResult,
 } from '../lib/trackRecord'
+
+const PB_TIERS = [
+  { match: '5 + Powerball', prize: 'JACKPOT' },
+  { match: '5', prize: '$1,000,000' },
+  { match: '4 + Powerball', prize: '$50,000' },
+  { match: '4', prize: '$100' },
+  { match: '3 + Powerball', prize: '$100' },
+  { match: '3', prize: '$7' },
+  { match: '2 + Powerball', prize: '$7' },
+  { match: '1 + Powerball', prize: '$4' },
+  { match: 'Powerball only', prize: '$4' },
+]
+
+const MM_TIERS = [
+  { match: '5 + Mega Ball', prize: 'JACKPOT' },
+  { match: '5', prize: '$1,000,000' },
+  { match: '4 + Mega Ball', prize: '$10,000' },
+  { match: '4', prize: '$500' },
+  { match: '3 + Mega Ball', prize: '$200' },
+  { match: '3', prize: '$10' },
+  { match: '2 + Mega Ball', prize: '$10' },
+  { match: '1 + Mega Ball', prize: '$4' },
+  { match: 'Mega Ball only', prize: '$2' },
+]
+
+function PrizeLegend() {
+  const [open, setOpen] = useState(false)
+  const toggle = useCallback(() => setOpen(o => !o), [])
+  return (
+    <div className="border border-white/10 rounded-lg overflow-hidden mb-4">
+      <button
+        onClick={toggle}
+        className="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-300 hover:bg-white/5 transition-colors"
+      >
+        <span className="font-medium tracking-wide">Prize Tiers</span>
+        <span className="text-gray-500">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Powerball */}
+            <div>
+              <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1.5">Powerball</p>
+              <div className="flex flex-col gap-1">
+                {PB_TIERS.map(t => (
+                  <div key={t.match} className="flex justify-between gap-2 text-[10px]">
+                    <span className="text-gray-400">{t.match}</span>
+                    <span className={t.prize === 'JACKPOT' ? 'text-yellow-400 font-bold' : 'text-white font-medium'}>{t.prize}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Mega Millions */}
+            <div>
+              <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider mb-1.5">Mega Millions</p>
+              <div className="flex flex-col gap-1">
+                {MM_TIERS.map(t => (
+                  <div key={t.match} className="flex justify-between gap-2 text-[10px]">
+                    <span className="text-gray-400">{t.match}</span>
+                    <span className={t.prize === 'JACKPOT' ? 'text-yellow-400 font-bold' : 'text-white font-medium'}>{t.prize}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-500 text-center">Prizes shown are base amounts before Power Play / Megaplier.</p>
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface Props {
   pbDraws: Draw[]
@@ -238,6 +309,8 @@ export default function TrackRecord({ pbDraws, mmDraws }: Props) {
           <div className="text-[10px] text-gray-400 uppercase tracking-wider">Best Whites</div>
         </div>
       </div>
+
+      <PrizeLegend />
 
       <div className="flex flex-col gap-3">
         {picks.map(pick => (
