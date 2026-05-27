@@ -83,12 +83,22 @@ export default function SuggestedPick({ game, mode, result }: Props) {
               ))}
             </div>
 
-            <button
-              onClick={handleGenerateAnother}
-              className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
-            >
-              Generate another
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleGenerateAnother}
+                className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+              >
+                Generate another
+              </button>
+              {extraPicks.length > 0 && (
+                <button
+                  onClick={() => setExtraPicks([])}
+                  className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2 transition-colors"
+                >
+                  Clear extras
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>
