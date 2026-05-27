@@ -92,7 +92,12 @@ export function generateAstrologyPick(
   whites.sort((a, b) => a - b)
 
   const transitMoon = transits.find(t => t.name === 'Moon')!
-  const degInSign = transitMoon.lon % 30
+  const transitSun = transits.find(t => t.name === 'Sun')!
+  // PB uses Moon position; MM uses Sun-Moon midpoint for a genuinely different bonus
+  const bonusLon = game === 'powerball'
+    ? transitMoon.lon
+    : (transitMoon.lon + transitSun.lon) / 2 % 360
+  const degInSign = bonusLon % 30
   const bonus = ((Math.round((degInSign / 30) * bonusMax) + variation * 5) % bonusMax) + 1
 
   return { whites, bonus }
