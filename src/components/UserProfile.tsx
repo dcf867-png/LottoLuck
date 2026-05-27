@@ -45,13 +45,14 @@ export default function UserProfile() {
       .upsert({
         id: user.id,
         email: user.email,
-        full_name: profile.full_name,
-        birth_date: profile.birth_date,
-        birth_time: profile.birth_time,
-        birth_city: profile.birth_city,
+        full_name: profile.full_name || null,
+        birth_date: profile.birth_date || null,
+        birth_time: profile.birth_time || null,
+        birth_city: profile.birth_city || null,
       })
 
     if (error) {
+      console.error('Profile save error:', error)
       setMessage({ type: 'error', text: 'Failed to save. Please try again.' })
     } else {
       setMessage({ type: 'success', text: 'Profile saved!' })
