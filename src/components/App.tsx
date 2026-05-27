@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import pbCsv from '../data/powerball-1992-2009.csv?raw'
 import mmCsv from '../data/megamillions-1996-2001.csv?raw'
 import { parseCsv, parseApiRow, mergeAndDedup } from '../lib/parse'
@@ -10,9 +10,9 @@ import ModeToggle from './ModeToggle'
 import SuggestedPick from './SuggestedPick'
 import AnalysisPanels from './AnalysisPanels'
 import BonusBallChart from './BonusBallChart'
-import NumerologyPick from './NumerologyPick'
-import AstrologyPick from './AstrologyPick'
-import DrawLookup from './DrawLookup'
+import PersonalTab, { type PersonalTabState } from './PersonalTab'
+import LatestDraws from './LatestDraws'
+import TrackRecord from './TrackRecord'
 import ScoringKey from './ScoringKey'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
@@ -29,10 +29,8 @@ async function fetchGameData(game: Game): Promise<GameData> {
   if (!res.ok) throw new Error(`${game} API returned ${res.status}`)
   const rows: Record<string, string>[] = await res.json()
   const apiDraws = rows.map(r => parseApiRow(game, r))
-
   const csvText = game === 'powerball' ? pbCsv : mmCsv
   const csvDraws = parseCsv(game, csvText)
-
   const draws = mergeAndDedup(csvDraws, apiDraws)
   const currentEraDraws = draws.filter(d => d.era === 'current')
   return { game, draws, currentEraDraws, fetchedAt: Date.now() }
@@ -48,6 +46,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('powerball')
   const [activeGame, setActiveGame] = useState<Game>('powerball')
   const [mode, setMode] = useState<Mode>('full')
+  const personalStateRef = useRef<PersonalTabState>({})
 
   const load = useCallback(async () => {
     setAppState({ status: 'loading' })
@@ -70,7 +69,7 @@ export default function App() {
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
-    if (tab !== 'personal') {
+    if (tab !== 'personal' && tab !== 'recentdraws' && tab !== 'trackrecord') {
       setActiveGame(tab)
       setMode('full')
     }
@@ -81,7 +80,8 @@ export default function App() {
 
   const gameData = activeGame === 'powerball' ? appState.pb : appState.mm
   const result: AnalysisResult = analyze(gameData.currentEraDraws, activeGame)
-  const isGameTab = activeTab !== 'personal'
+  const isGameTab = activeTab === 'powerball' || activeTab === 'megamillions'
+
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -91,23 +91,27 @@ export default function App() {
         <div className="deck-shell pb-10">
           <ModeToggle game={activeGame} mode={mode} onModeChange={setMode} />
           <SuggestedPick game={activeGame} mode={mode} result={result} />
-          <DrawLookup game={activeGame} draws={gameData.draws} />
           <BonusBallChart game={activeGame} scores={result.bonusScores} />
           <AnalysisPanels game={activeGame} mode={mode} result={result} />
-          <ScoringKey />
-          <footer className="flex justify-center">
-            <div className="panel px-4 py-3 flex flex-col gap-1 text-center text-xs w-full">
-              <span className="text-white/70">{gameData.currentEraDraws.length} current-era draws analysed · data via NY Open Data</span>
-              <span className="text-white/50">For entertainment purposes only.</span>
-            </div>
-          </footer>
+          <ScoringKey drawCount={gameData.currentEraDraws.length} />
         </div>
       )}
 
-      {!isGameTab && (
+      {activeTab === 'recentdraws' && (
         <div className="deck-shell pb-10">
-          <AstrologyPick />
-          <NumerologyPick />
+          <LatestDraws pbDraws={appState.pb.draws} mmDraws={appState.mm.draws} />
+        </div>
+      )}
+
+      {activeTab === 'trackrecord' && (
+        <div className="deck-shell pb-10">
+          <TrackRecord pbDraws={appState.pb.draws} mmDraws={appState.mm.draws} />
+        </div>
+      )}
+
+      {activeTab === 'personal' && (
+        <div className="deck-shell pb-10">
+          <PersonalTab stateRef={personalStateRef} />
           <footer className="flex justify-center">
             <div className="panel px-4 py-3 text-center text-xs w-full">
               <span className="text-white/50">For entertainment purposes only.</span>

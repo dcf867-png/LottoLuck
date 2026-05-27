@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { GAME_CONFIG } from '../lib/types'
 import { buildProfile, generateNumerologyPick, type NumerologyProfile } from '../lib/numerology'
+import DateInput from './DateInput'
+import { savePick } from '../lib/trackRecord'
 
 interface PickPair {
   pb: { whites: number[]; bonus: number }
@@ -25,9 +27,21 @@ function ProfileBadge({ label, value }: { label: string; value: number }) {
   )
 }
 
-export default function NumerologyPick() {
+
+interface Props {
+  sharedBirthDate?: string
+}
+
+export default function NumerologyPick({ sharedBirthDate }: Props) {
   const [name, setName] = useState('')
-  const [dob, setDob] = useState('')
+  const [dob, setDob] = useState(sharedBirthDate ?? '')
+
+  // Sync shared birth date into local field if user hasn't set one yet
+  const [prevShared, setPrevShared] = useState(sharedBirthDate)
+  if (sharedBirthDate !== prevShared) {
+    setPrevShared(sharedBirthDate)
+    if (sharedBirthDate) setDob(sharedBirthDate)
+  }
   const [profile, setProfile] = useState<NumerologyProfile | null>(null)
   const [picks, setPicks] = useState<PickPair[]>([])
   const [error, setError] = useState('')
@@ -38,21 +52,21 @@ export default function NumerologyPick() {
     setError('')
     const newProfile = buildProfile(name.trim(), dob)
     setProfile(newProfile)
-    setPicks([{
-      pb: generateNumerologyPick(newProfile, 'powerball', 0),
-      mm: generateNumerologyPick(newProfile, 'megamillions', 0),
-      index: 0,
-    }])
+    const pb = generateNumerologyPick(newProfile, 'powerball', 0)
+    const mm = generateNumerologyPick(newProfile, 'megamillions', 0)
+    setPicks([{ pb, mm, index: 0 }])
+    savePick({ source: 'numerology', game: 'powerball', whites: pb.whites, bonus: pb.bonus })
+    savePick({ source: 'numerology', game: 'megamillions', whites: mm.whites, bonus: mm.bonus })
   }
 
   function handleGenerateAnother() {
     if (!profile) return
     const nextIndex = picks.length
-    setPicks(prev => [...prev, {
-      pb: generateNumerologyPick(profile, 'powerball', nextIndex),
-      mm: generateNumerologyPick(profile, 'megamillions', nextIndex),
-      index: nextIndex,
-    }])
+    const pb = generateNumerologyPick(profile, 'powerball', nextIndex)
+    const mm = generateNumerologyPick(profile, 'megamillions', nextIndex)
+    setPicks(prev => [...prev, { pb, mm, index: nextIndex }])
+    savePick({ source: 'numerology', game: 'powerball', whites: pb.whites, bonus: pb.bonus })
+    savePick({ source: 'numerology', game: 'megamillions', whites: mm.whites, bonus: mm.bonus })
   }
 
   return (
@@ -74,24 +88,7 @@ export default function NumerologyPick() {
             className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-purple-500"
           />
         </div>
-        <div>
-          <label className="block text-xs text-gray-200 mb-1">Date of Birth</label>
-          <div className="relative">
-            <input
-              type="date"
-              value={dob}
-              onChange={e => setDob(e.target.value)}
-              className="w-full bg-black/40 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-purple-500 pr-8"
-            />
-            {dob && (
-              <button
-                onClick={() => setDob('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white text-[12px] leading-none"
-                aria-label="Clear date"
-              >×</button>
-            )}
-          </div>
-        </div>
+        <DateInput value={dob} onChange={setDob} label="Date of Birth" />
         {error && <p className="text-xs text-red-400">{error}</p>}
         <button
           onClick={handleGenerate}
