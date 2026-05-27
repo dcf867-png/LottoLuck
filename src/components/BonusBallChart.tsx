@@ -18,19 +18,19 @@ export default function BonusBallChart({ game, scores }: Props) {
         <span className="dot" />{cfg.bonusLabel} Frequency
       </h2>
 
-      <div className="flex items-end gap-px h-24 overflow-x-auto">
+      <div className="flex items-end gap-px h-24 overflow-x-auto pb-1">
         {sorted.map(s => {
           const pct = s.appearances / maxApp
           return (
-            <div key={s.number} className="flex flex-col items-center gap-0.5 flex-1 min-w-[10px]">
+            <div key={s.number} className="flex flex-col items-center gap-0.5 min-w-[20px]">
               <div
                 className={`w-full ${cfg.bonusColor} rounded-t-sm opacity-80 flex items-end justify-center`}
                 style={{ height: `${Math.max(pct * 80, 10)}px` }}
                 title={`${s.number}: ${s.appearances}×`}
               >
-                <span className="text-[12px] text-black font-bold leading-none mb-0.5">{s.appearances}</span>
+                <span className="text-[9px] text-black font-bold leading-none mb-0.5">{s.appearances}</span>
               </div>
-              <span className="text-[12px] text-gray-300 leading-none">{s.number}</span>
+              <span className="text-[9px] text-gray-300 leading-none">{s.number}</span>
             </div>
           )
         })}
