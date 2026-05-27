@@ -42,13 +42,14 @@ export default function UserProfile() {
 
     const { error } = await supabase
       .from('profiles')
-      .update({
+      .upsert({
+        id: user.id,
+        email: user.email,
         full_name: profile.full_name,
         birth_date: profile.birth_date,
         birth_time: profile.birth_time,
         birth_city: profile.birth_city,
       })
-      .eq('id', user.id)
 
     if (error) {
       setMessage({ type: 'error', text: 'Failed to save. Please try again.' })
