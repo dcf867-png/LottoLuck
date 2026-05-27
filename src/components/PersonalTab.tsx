@@ -58,6 +58,7 @@ export default function PersonalTab({ stateRef }: Props) {
           setCityState(city)
           persist({ birthDate: date, birthTime: time, cityState: city })
           setProfileLoaded(true)
+          generateChart(date, time, city)
         }
       })
   }, [user])
@@ -67,18 +68,18 @@ export default function PersonalTab({ stateRef }: Props) {
     Object.assign(stateRef.current, patch)
   }
 
-  async function handleGenerate() {
-    if (!birthDate) { setError('Please enter your date of birth.'); return }
+  async function generateChart(date: string, time: string, city: string) {
+    if (!date) { setError('Please enter your date of birth.'); return }
     setError('')
     setIsLoading(true)
     try {
       let lat: number | undefined
       let lng: number | undefined
-      if (cityState.trim()) {
-        const coords = await geocodeCity(cityState.trim())
+      if (city.trim()) {
+        const coords = await geocodeCity(city.trim())
         if (coords) { lat = coords.lat; lng = coords.lng }
       }
-      const newChart = buildNatalChart(birthDate, birthTime || undefined, lat, lng)
+      const newChart = buildNatalChart(date, time || undefined, lat, lng)
       setChart(newChart)
       persist({ chart: newChart })
     } catch (e) {
@@ -87,6 +88,8 @@ export default function PersonalTab({ stateRef }: Props) {
       setIsLoading(false)
     }
   }
+
+  const handleGenerate = () => generateChart(birthDate, birthTime, cityState)
 
   return (
     <>
