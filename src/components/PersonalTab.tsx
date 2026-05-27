@@ -35,6 +35,7 @@ export default function PersonalTab({ stateRef }: Props) {
   const [birthTime, setBirthTime] = useState(stateRef.current.birthTime ?? '')
   const [cityState, setCityState] = useState(stateRef.current.cityState ?? '')
   const [chart, setChart] = useState<NatalChart | null>(stateRef.current.chart ?? null)
+  const [fullName, setFullName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [profileLoaded, setProfileLoaded] = useState(false)
@@ -44,7 +45,7 @@ export default function PersonalTab({ stateRef }: Props) {
     if (!user || stateRef.current.chart) return
     supabase
       .from('profiles')
-      .select('birth_date, birth_time, birth_city')
+      .select('full_name, birth_date, birth_time, birth_city')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
@@ -56,6 +57,7 @@ export default function PersonalTab({ stateRef }: Props) {
           setBirthDate(date)
           setBirthTime(time)
           setCityState(city)
+          setFullName(data.full_name ?? '')
           persist({ birthDate: date, birthTime: time, cityState: city })
           setProfileLoaded(true)
           generateChart(date, time, city)
@@ -110,7 +112,7 @@ export default function PersonalTab({ stateRef }: Props) {
         isLoading={isLoading}
         error={error}
       />
-      <NumerologyPick sharedBirthDate={birthDate} />
+      <NumerologyPick sharedBirthDate={birthDate} sharedName={fullName} />
     </>
   )
 }

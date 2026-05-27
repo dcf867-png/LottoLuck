@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import AuthModal from './AuthModal'
 import UserProfile from './UserProfile'
+import { useAuth } from '../contexts/AuthContext'
 import pbCsv from '../data/powerball-1992-2009.csv?raw'
 import mmCsv from '../data/megamillions-1996-2001.csv?raw'
 import { parseCsv, parseApiRow, mergeAndDedup } from '../lib/parse'
@@ -48,8 +49,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('powerball')
   const [activeGame, setActiveGame] = useState<Game>('powerball')
   const [mode, setMode] = useState<Mode>('full')
+  const { user } = useAuth()
   const personalStateRef = useRef<PersonalTabState>({})
   const [showAuth, setShowAuth] = useState(false)
+
+  // Clear personal state when user signs out
+  useEffect(() => {
+    if (!user) {
+      personalStateRef.current = {}
+    }
+  }, [user])
 
   const load = useCallback(async () => {
     setAppState({ status: 'loading' })

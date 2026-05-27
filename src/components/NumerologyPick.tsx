@@ -30,17 +30,23 @@ function ProfileBadge({ label, value }: { label: string; value: number }) {
 
 interface Props {
   sharedBirthDate?: string
+  sharedName?: string
 }
 
-export default function NumerologyPick({ sharedBirthDate }: Props) {
-  const [name, setName] = useState('')
+export default function NumerologyPick({ sharedBirthDate, sharedName }: Props) {
+  const [name, setName] = useState(sharedName ?? '')
   const [dob, setDob] = useState(sharedBirthDate ?? '')
 
-  // Sync shared birth date into local field if user hasn't set one yet
+  // Sync shared values into local fields when they change
   const [prevShared, setPrevShared] = useState(sharedBirthDate)
+  const [prevName, setPrevName] = useState(sharedName)
   if (sharedBirthDate !== prevShared) {
     setPrevShared(sharedBirthDate)
     if (sharedBirthDate) setDob(sharedBirthDate)
+  }
+  if (sharedName !== prevName) {
+    setPrevName(sharedName)
+    if (sharedName) setName(sharedName)
   }
   const [profile, setProfile] = useState<NumerologyProfile | null>(null)
   const [picks, setPicks] = useState<PickPair[]>([])
