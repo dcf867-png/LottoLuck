@@ -30,7 +30,7 @@ export default function BonusBallChart({ game, scores }: Props) {
               >
                 <span className="text-[9px] text-black font-bold leading-none mb-0.5">{s.appearances}</span>
               </div>
-              <div className={`w-[18px] h-[18px] rounded-full flex items-center justify-center bg-black border-2 ${game === 'powerball' ? 'border-red-600' : 'border-yellow-400'}`}>
+              <div className={`w-[18px] h-[18px] rounded-full flex items-center justify-center ${game === 'powerball' ? 'bg-red-600' : 'bg-yellow-400'}`}>
                 <span className="text-[8px] font-bold leading-none text-white">{s.number}</span>
               </div>
             </div>
