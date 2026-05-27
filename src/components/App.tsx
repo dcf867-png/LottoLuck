@@ -72,7 +72,7 @@ export default function App() {
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
-    if (tab !== 'personal' && tab !== 'recentdraws' && tab !== 'trackrecord') {
+    if (tab !== 'personal' && tab !== 'recentdraws' && tab !== 'trackrecord' && tab !== 'profile') {
       setActiveGame(tab)
       setMode('full')
     }
