@@ -51,7 +51,7 @@ export interface CachedAppData {
 export interface SavedPick {
   id: string          // unique ID (timestamp + random)
   savedAt: string     // 'YYYY-MM-DD' — date pick was saved
-  source: 'astrology' | 'numerology'
+  source: 'astrology' | 'numerology' | 'statistical'
   game: Game
   whites: number[]    // 5 numbers sorted ascending
   bonus: number

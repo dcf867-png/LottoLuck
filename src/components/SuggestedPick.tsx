@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Game, Mode, AnalysisResult, Pick } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
+import { savePick } from '../lib/trackRecord'
 
 interface Props {
   game: Game
@@ -42,9 +43,17 @@ export default function SuggestedPick({ game, mode, result }: Props) {
   const title = mode === 'bonus' ? `${cfg.bonusLabel} Pick` : 'Suggested Pick'
   const titleColor = game === 'powerball' ? 'text-red-500' : 'text-yellow-400'
 
+  // Auto-save Pick 1 whenever the game tab changes (duplicate guard in savePick prevents re-saves)
+  useEffect(() => {
+    if (mode !== 'full') return
+    savePick({ source: 'statistical', game, whites: pick.whites, bonus: pick.bonus })
+  }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleGenerateAnother() {
     const variation = extraPicks.length + 1
-    setExtraPicks(prev => [...prev, generateAlternatePick(result, variation)])
+    const newPick = generateAlternatePick(result, variation)
+    setExtraPicks(prev => [...prev, newPick])
+    savePick({ source: 'statistical', game, whites: newPick.whites, bonus: newPick.bonus })
   }
 
   return (

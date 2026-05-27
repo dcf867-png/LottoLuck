@@ -71,10 +71,12 @@ function PickCard({
             className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
               pick.source === 'astrology'
                 ? 'bg-purple-800 text-purple-200'
-                : 'bg-blue-800 text-blue-200'
+                : pick.source === 'numerology'
+                ? 'bg-blue-800 text-blue-200'
+                : 'bg-emerald-800 text-emerald-200'
             }`}
           >
-            {pick.source === 'astrology' ? '★ Astro' : '# Num'}
+            {pick.source === 'astrology' ? '★ Astro' : pick.source === 'numerology' ? '# Num' : '📊 Stat'}
           </span>
           <span
             className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
