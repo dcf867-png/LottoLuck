@@ -42,7 +42,7 @@ export default function Header({ activeTab, onTabChange }: Props) {
       <h1 className="logo-text">
         Lotto<span className="logo-glow">Pulse</span>
       </h1>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         {(['powerball', 'megamillions', 'recentdraws', 'personal', 'trackrecord'] as Tab[]).map(tab => (
           <button
             key={tab}
