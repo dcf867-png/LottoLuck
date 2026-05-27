@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { buildNatalChart, type NatalChart } from '../lib/astrology'
 import AstroPanel from './AstroPanel'
 import NumerologyPick from './NumerologyPick'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 async function geocodeCity(query: string): Promise<{ lat: number; lng: number } | null> {
   try {
@@ -28,12 +30,37 @@ interface Props {
 }
 
 export default function PersonalTab({ stateRef }: Props) {
+  const { user } = useAuth()
   const [birthDate, setBirthDate] = useState(stateRef.current.birthDate ?? '')
   const [birthTime, setBirthTime] = useState(stateRef.current.birthTime ?? '')
   const [cityState, setCityState] = useState(stateRef.current.cityState ?? '')
   const [chart, setChart] = useState<NatalChart | null>(stateRef.current.chart ?? null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [profileLoaded, setProfileLoaded] = useState(false)
+
+  // Auto-load profile data when user is logged in
+  useEffect(() => {
+    if (!user || stateRef.current.chart) return
+    supabase
+      .from('profiles')
+      .select('birth_date, birth_time, birth_city')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        const date = data.birth_date ?? ''
+        const time = data.birth_time ?? ''
+        const city = data.birth_city ?? ''
+        if (date) {
+          setBirthDate(date)
+          setBirthTime(time)
+          setCityState(city)
+          persist({ birthDate: date, birthTime: time, cityState: city })
+          setProfileLoaded(true)
+        }
+      })
+  }, [user])
 
   // Persist state into the ref so it survives unmount
   function persist(patch: Partial<PersonalTabState>) {
@@ -63,6 +90,11 @@ export default function PersonalTab({ stateRef }: Props) {
 
   return (
     <>
+      {profileLoaded && (
+        <div className="mx-4 mb-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-400 text-center">
+          ✓ Birth info loaded from your profile
+        </div>
+      )}
       <AstroPanel
         chart={chart}
         birthDate={birthDate}
