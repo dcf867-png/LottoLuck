@@ -32,11 +32,11 @@ const PHASE_ICONS: Record<string, string> = {
   'New Moon': '🌑', 'Full Moon': '🌕', 'First Quarter': '🌓', 'Last Quarter': '🌗',
 }
 
-function scoreColor(score: number): string {
-  if (score >= 0.78) return 'bg-yellow-400/85 text-gray-900'
-  if (score >= 0.64) return 'bg-green-500/70 text-white'
-  if (score >= 0.52) return 'bg-sky-500/65 text-white'
-  return 'bg-amber-800/70 text-white'
+function scoreColor(stars: number): string {
+  if (stars === 4) return 'bg-amber-400 text-gray-900'
+  if (stars === 3) return 'bg-emerald-500/80 text-white'
+  if (stars === 2) return 'bg-sky-500/65 text-white'
+  return 'bg-amber-800/70 text-white/60'
 }
 
 function Stars({ count }: { count: number }) {
@@ -317,9 +317,9 @@ export default function AstroPanel({
 
           {/* Month navigation */}
           <div className="flex items-center justify-between">
-            <button onClick={prevMonth} disabled={!canGoBack()} className="text-purple-400 hover:text-purple-300 disabled:opacity-20 text-lg px-2">‹</button>
+            <button onClick={prevMonth} disabled={!canGoBack()} className="text-purple-400 hover:text-purple-300 disabled:opacity-20 text-4xl px-2">‹</button>
             <span className="text-sm font-semibold text-white">{MONTH_NAMES[viewMonth]} {viewYear}</span>
-            <button onClick={nextMonth} disabled={!canGoForward()} className="text-purple-400 hover:text-purple-300 disabled:opacity-20 text-lg px-2">›</button>
+            <button onClick={nextMonth} disabled={!canGoForward()} className="text-purple-400 hover:text-purple-300 disabled:opacity-20 text-4xl px-2">›</button>
           </div>
 
           {/* Calendar grid */}
@@ -334,15 +334,21 @@ export default function AstroPanel({
               const isPast = dateStr < todayStr
               const isToday = dateStr === todayStr
               const isSelected = dateStr === selected
-              let cls = 'aspect-square flex items-center justify-center rounded text-xs font-medium transition-all '
+              let cls = 'aspect-square flex flex-col items-center justify-center rounded text-xs font-medium transition-all '
               if (isPast) cls += 'bg-white/5 text-white/20 cursor-default'
-              else if (ds) cls += scoreColor(ds.score) + ' cursor-pointer hover:brightness-110'
+              else if (ds && ds.stars === 5) cls += 'bg-purple-600 text-white cursor-pointer hover:brightness-110'
+              else if (ds) cls += scoreColor(ds.stars) + ' cursor-pointer hover:brightness-110'
               else cls += 'bg-white/10 text-white/40 cursor-default'
               if (isToday) cls += ' ring-2 ring-purple-400'
               if (isSelected && !isPast) cls += ' ring-2 ring-white'
               return (
                 <div key={dateStr} className={cls} onClick={() => !isPast && ds && setSelected(isSelected ? null : dateStr)}>
-                  {day}
+                  <span>{day}</span>
+                  {ds && !isPast && (
+                    <span className="text-yellow-300 leading-none" style={{ fontSize: '16px', letterSpacing: '-1px', textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
+                      {'★'.repeat(ds.stars)}
+                    </span>
+                  )}
                 </div>
               )
             })}
@@ -354,7 +360,7 @@ export default function AstroPanel({
 
           {/* Legend */}
           <div className="flex gap-3 flex-wrap justify-center">
-            {[{ color: 'bg-yellow-400/85', label: 'High' }, { color: 'bg-green-500/70', label: 'Good' }, { color: 'bg-sky-500/65', label: 'Moderate' }, { color: 'bg-amber-800/70', label: 'Low' }].map(({ color, label }) => (
+            {[{ color: 'bg-amber-800/70', label: 'Low' }, { color: 'bg-sky-500/65', label: 'Moderate' }, { color: 'bg-emerald-500/80', label: 'Good' }, { color: 'bg-amber-400', label: 'High' }, { color: 'bg-purple-600', label: 'Special' }].map(({ color, label }) => (
               <div key={label} className="flex items-center gap-1">
                 <div className={`w-3 h-3 rounded ${color}`} />
                 <span className="text-[10px] text-white/50">{label}</span>

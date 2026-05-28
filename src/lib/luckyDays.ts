@@ -207,8 +207,26 @@ export function scoreDays(natal: NatalChart, days = 42, startDate?: Date): DaySc
 
     if (reasons.length === 0) reasons.push('Steady energy — reliable for measured moves')
 
-    results.push({ date: dateStr, score, stars: score >= 0.70 ? 4 : score >= 0.50 ? 3 : score >= 0.30 ? 2 : 1, moonPhaseName: phaseName, moonSign: sign, dayName: DAY_NAMES[dow], reasons })
+    // Special day detection (5-star tier) — once-a-year events only
+    const birthMMDD = natal.birthDate.slice(5)
+    const isSolarReturn = dateStr.slice(5) === birthMMDD
+    const isNewMoonInSunSign = phaseName === 'New Moon' && natalSun !== undefined && sign === natalSun.sign
+
+    if (isSolarReturn) reasons.unshift('☀️ Solar Return — your personal power day of the year')
+    if (isNewMoonInSunSign && natalSun) reasons.unshift(`🌑 New Moon in ${natalSun.sign} — your most powerful reset of the year`)
+
+    const isSpecial = isSolarReturn || isNewMoonInSunSign
+
+    results.push({ date: dateStr, score, stars: isSpecial ? 5 : 0, moonPhaseName: phaseName, moonSign: sign, dayName: DAY_NAMES[dow], reasons })
   }
+
+  // Assign stars by rank: top 3 = 4 stars (indigo), rest by percentile
+  const nonSpecial = results.filter(r => r.stars !== 5).sort((a, b) => a.score - b.score)
+  const n = nonSpecial.length
+  nonSpecial.forEach((r, rank) => {
+    const pct = rank / n
+    r.stars = pct >= 0.85 ? 4 : pct >= 0.60 ? 3 : pct >= 0.30 ? 2 : 1
+  })
 
   return results
 }
