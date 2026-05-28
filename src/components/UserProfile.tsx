@@ -37,12 +37,15 @@ export default function UserProfile() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Security state
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
   const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [changingPw, setChangingPw] = useState(false)
   const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [sendingReset, setSendingReset] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
@@ -82,22 +85,45 @@ export default function UserProfile() {
 
   const handleChangePassword = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user?.email) return
     if (newPassword !== confirmPassword) { setPwMessage({ type: 'error', text: 'Passwords do not match.' }); return }
     if (newPassword.length < 6) { setPwMessage({ type: 'error', text: 'Password must be at least 6 characters.' }); return }
     setChangingPw(true)
     setPwMessage(null)
+    // Verify current password first
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    })
+    if (signInError) {
+      setPwMessage({ type: 'error', text: 'Current password is incorrect.' })
+      setChangingPw(false)
+      return
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) {
       setPwMessage({ type: 'error', text: error.message })
     } else {
       setPwMessage({ type: 'success', text: 'Password updated!' })
+      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setShowCurrentPw(false)
       setShowNewPw(false)
       setShowConfirmPw(false)
     }
     setChangingPw(false)
-  }, [newPassword, confirmPassword])
+  }, [currentPassword, newPassword, confirmPassword, user])
+
+  const handleSendReset = async () => {
+    if (!user?.email) return
+    setSendingReset(true)
+    await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: window.location.origin,
+    })
+    setPwMessage({ type: 'success', text: 'Reset link sent! Check your email.' })
+    setSendingReset(false)
+  }
 
   const handleDeleteAccount = async () => {
     setDeleting(true)
@@ -212,6 +238,29 @@ export default function UserProfile() {
 
               <form onSubmit={handleChangePassword} className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-gray-400 uppercase tracking-wider">Current Password</label>
+                    <button
+                      type="button"
+                      onClick={handleSendReset}
+                      disabled={sendingReset}
+                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                    >
+                      {sendingReset ? 'Sending…' : 'Forgot password?'}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input type={showCurrentPw ? 'text' : 'password'} placeholder="Your current password" value={currentPassword}
+                      onChange={e => setCurrentPassword(e.target.value)} required
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 pr-10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500" />
+                    <button type="button" onClick={() => setShowCurrentPw(v => !v)} tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      aria-label={showCurrentPw ? 'Hide password' : 'Show password'}>
+                      <EyeIcon open={showCurrentPw} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-400 uppercase tracking-wider">New Password</label>
                   <div className="relative">
                     <input type={showNewPw ? 'text' : 'password'} placeholder="At least 6 characters" value={newPassword}
@@ -245,9 +294,9 @@ export default function UserProfile() {
                   )}
                 </div>
                 <button type="submit"
-                  disabled={changingPw || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+                  disabled={changingPw || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
-                  {changingPw ? 'Updating…' : 'Update Password'}
+                  {changingPw ? 'Verifying…' : 'Update Password'}
                 </button>
               </form>
             </div>
