@@ -1,5 +1,5 @@
 export type Game = 'powerball' | 'megamillions'
-export type Tab = Game | 'personal' | 'recentdraws' | 'trackrecord' | 'profile'
+export type Tab = Game | 'personal' | 'recentdraws' | 'trackrecord' | 'profile' | 'winners'
 export type Mode = 'full' | 'bonus'
 export type Era = 'current' | 'legacy'
 

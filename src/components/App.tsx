@@ -16,6 +16,7 @@ import BonusBallChart from './BonusBallChart'
 import PersonalTab, { type PersonalTabState } from './PersonalTab'
 import LatestDraws from './LatestDraws'
 import TrackRecord from './TrackRecord'
+import Winners from './Winners'
 import ScoringKey from './ScoringKey'
 import LoadingScreen from './LoadingScreen'
 import ErrorCard from './ErrorCard'
@@ -81,7 +82,7 @@ export default function App() {
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab)
-    if (tab !== 'personal' && tab !== 'recentdraws' && tab !== 'trackrecord' && tab !== 'profile') {
+    if (tab !== 'personal' && tab !== 'recentdraws' && tab !== 'trackrecord' && tab !== 'profile' && tab !== 'winners') {
       setActiveGame(tab)
       setMode('full')
     }
@@ -119,6 +120,12 @@ export default function App() {
       {activeTab === 'trackrecord' && (
         <div className="deck-shell pb-10">
           <TrackRecord pbDraws={appState.pb.draws} mmDraws={appState.mm.draws} />
+        </div>
+      )}
+
+      {activeTab === 'winners' && (
+        <div className="deck-shell pb-10">
+          <Winners pbDraws={appState.pb.draws} mmDraws={appState.mm.draws} onAuthClick={() => setShowAuth(true)} />
         </div>
       )}
 
