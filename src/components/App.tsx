@@ -143,13 +143,15 @@ export default function App() {
       {activeTab === 'personal' && (
         <div className="deck-shell pb-10">
           <PersonalTab stateRef={personalStateRef} />
-          <footer className="flex justify-center">
-            <div className="panel px-4 py-3 text-center text-xs w-full">
-              <span className="text-white/50">For entertainment purposes only.</span>
-            </div>
-          </footer>
         </div>
       )}
+
+      <footer className="max-w-2xl mx-auto px-4 pb-8">
+        <div className="panel px-4 py-3 text-center text-xs text-white/40 space-y-1">
+          <p>For entertainment purposes only.</p>
+          <p>LottoPulse is not affiliated with, endorsed by, or connected to any official lottery organization.</p>
+        </div>
+      </footer>
     </div>
   )
 }

@@ -83,7 +83,7 @@ export default function CommunityChat({ onAuthClick }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-purple-400 mb-3">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-white mb-3">
         💬 Community Chat
       </p>
 
