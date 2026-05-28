@@ -86,7 +86,7 @@ export default function Header({ activeTab, onTabChange, onAuthClick }: Props) {
               : tab === 'megamillions' ? 'Mega Millions'
               : tab === 'recentdraws' ? 'Recent Draws'
               : tab === 'trackrecord' ? 'Track Record'
-              : tab === 'winners' ? '🏆 Winners'
+              : tab === 'winners' ? '🏆 Community'
               : 'Lucky Star Picks'}
           </button>
         ))}

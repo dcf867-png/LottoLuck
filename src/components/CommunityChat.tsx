@@ -38,8 +38,15 @@ export default function CommunityChat({ onAuthClick }: Props) {
     setError('')
     try {
       setPosts(await fetchPosts())
-    } catch {
-      setError('Failed to load chat.')
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : (err as Record<string, unknown>)?.message
+            ? String((err as Record<string, unknown>).message)
+            : JSON.stringify(err)
+      console.error('fetchPosts error:', msg, err)
+      setError(msg)
     }
     setLoading(false)
   }, [])
