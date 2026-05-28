@@ -8,7 +8,7 @@ import {
   fetchComments,
   postComment,
   deleteComment,
-  fetchDisplayName,
+  fetchUsername,
   type CommunityComment,
 } from '../lib/community'
 import { useAuth } from '../contexts/AuthContext'
@@ -89,12 +89,12 @@ function SourceBadge({ source }: { source: SavedPick['source'] | null }) {
 function WinComments({
   winId,
   currentUserId,
-  userDisplayName,
+  username,
   onAuthClick,
 }: {
   winId: string
   currentUserId: string | undefined
-  userDisplayName: string
+  username: string | null
   onAuthClick: () => void
 }) {
   const [comments, setComments] = useState<CommunityComment[]>([])
@@ -114,11 +114,11 @@ function WinComments({
   useEffect(() => { load() }, [load])
 
   async function handlePost() {
-    if (!currentUserId || !body.trim() || !userDisplayName.trim()) return
+    if (!currentUserId || !body.trim() || !username) return
     setPosting(true)
     setPostError('')
     try {
-      await postComment(winId, currentUserId, userDisplayName, body.trim())
+      await postComment(winId, currentUserId, username, body.trim())
       setBody('')
       await load()
     } catch {
@@ -146,7 +146,7 @@ function WinComments({
         <div key={c.id} className="flex flex-col gap-0.5 bg-white/5 rounded-lg px-2.5 py-1.5">
           <p className="text-xs text-gray-200 break-words">{c.body}</p>
           <div className="flex items-center justify-between text-[10px] text-gray-500">
-            <span className="font-semibold text-gray-400">{c.display_name}</span>
+            <span className="font-semibold text-purple-300">@{c.display_name}</span>
             <div className="flex items-center gap-2">
               <span>{timeAgo(c.created_at)}</span>
               {currentUserId === c.user_id && (
@@ -163,30 +163,40 @@ function WinComments({
         </div>
       ))}
 
-      {currentUserId ? (
-        <div className="flex gap-2 items-end mt-1">
-          <textarea
-            value={body}
-            onChange={e => setBody(e.target.value.slice(0, 280))}
-            placeholder="Add a comment…"
-            rows={1}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 resize-none"
-          />
-          <button
-            onClick={handlePost}
-            disabled={posting || !body.trim()}
-            className="text-[11px] bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0"
-          >
-            {posting ? '…' : 'Reply'}
-          </button>
-        </div>
-      ) : (
+      {!currentUserId ? (
         <button
           onClick={onAuthClick}
           className="text-[11px] text-purple-400 hover:text-purple-300 text-left transition-colors"
         >
           Sign in to comment →
         </button>
+      ) : username === null ? (
+        <p className="text-[11px] text-amber-400">
+          Set a username in the <span className="font-semibold">Profile</span> tab to reply.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1.5 mt-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-gray-500">Replying as</span>
+            <span className="text-[10px] font-semibold text-purple-300">@{username}</span>
+          </div>
+          <div className="flex gap-2 items-end">
+            <textarea
+              value={body}
+              onChange={e => setBody(e.target.value.slice(0, 280))}
+              placeholder="Add a comment…"
+              rows={1}
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 resize-none"
+            />
+            <button
+              onClick={handlePost}
+              disabled={posting || !body.trim()}
+              className="text-[11px] bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0"
+            >
+              {posting ? '…' : 'Reply'}
+            </button>
+          </div>
+        </div>
       )}
       {postError && <p className="text-[10px] text-red-400">{postError}</p>}
     </div>
@@ -220,12 +230,11 @@ function QuickPostForm({
       if (!data.user) return
       supabase
         .from('profiles')
-        .select('full_name')
+        .select('username')
         .eq('id', data.user.id)
         .single()
         .then(({ data: profile }) => {
-          if (profile?.full_name) setDisplayName(profile.full_name)
-          else setDisplayName(data.user!.email?.split('@')[0] ?? '')
+          if (profile?.username) setDisplayName(profile.username)
         })
     })
   }, [])
@@ -272,15 +281,9 @@ function QuickPostForm({
         </p>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-[10px] text-gray-400 uppercase tracking-wider">Display Name</label>
-        <input
-          type="text"
-          placeholder="How should we show your name?"
-          value={displayName}
-          onChange={e => setDisplayName(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500"
-        />
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-gray-400 uppercase tracking-wider">Posting as</span>
+        <span className="text-sm font-semibold text-purple-300">@{displayName || '…'}</span>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -441,14 +444,14 @@ function WinCard({
   win,
   draws,
   currentUserId,
-  userDisplayName,
+  username,
   onDelete,
   onAuthClick,
 }: {
   win: CommunityWin
   draws: { pb: Draw[]; mm: Draw[] }
   currentUserId: string | undefined
-  userDisplayName: string
+  username: string | null
   onDelete: (id: string) => void
   onAuthClick: () => void
 }) {
@@ -538,7 +541,7 @@ function WinCard({
         <WinComments
           winId={win.id}
           currentUserId={currentUserId}
-          userDisplayName={userDisplayName}
+          username={username}
           onAuthClick={onAuthClick}
         />
       )}
@@ -553,7 +556,7 @@ export default function Winners({ pbDraws, mmDraws, onAuthClick }: Props) {
   const [wins, setWins] = useState<CommunityWin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [userDisplayName, setUserDisplayName] = useState('')
+  const [username, setUsername] = useState<string | null>(null)
   const nameLoaded = useRef(false)
 
   const loadWins = useCallback(async () => {
@@ -573,7 +576,7 @@ export default function Winners({ pbDraws, mmDraws, onAuthClick }: Props) {
   useEffect(() => {
     if (!user || nameLoaded.current) return
     nameLoaded.current = true
-    fetchDisplayName(user.id, user.email ?? '').then(setUserDisplayName)
+    fetchUsername(user.id).then(setUsername)
   }, [user])
 
   const detectedWins = useMemo(
@@ -675,7 +678,7 @@ export default function Winners({ pbDraws, mmDraws, onAuthClick }: Props) {
                   win={win}
                   draws={{ pb: pbDraws, mm: mmDraws }}
                   currentUserId={user?.id}
-                  userDisplayName={userDisplayName}
+                  username={username}
                   onDelete={handleDelete}
                   onAuthClick={onAuthClick}
                 />

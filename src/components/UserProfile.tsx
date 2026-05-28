@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 type ProfileTab = 'profile' | 'security'
 
 interface Profile {
+  username: string | null
   full_name: string | null
   birth_date: string | null
   birth_time: string | null
@@ -30,8 +31,9 @@ export default function UserProfile() {
 
   // Profile state
   const [profile, setProfile] = useState<Profile>({
-    full_name: '', birth_date: '', birth_time: '', birth_city: '',
+    username: '', full_name: '', birth_date: '', birth_time: '', birth_city: '',
   })
+  const [usernameError, setUsernameError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -54,7 +56,7 @@ export default function UserProfile() {
     if (!user) return
     supabase
       .from('profiles')
-      .select('full_name, birth_date, birth_time, birth_city')
+      .select('username, full_name, birth_date, birth_time, birth_city')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
@@ -66,20 +68,34 @@ export default function UserProfile() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
+    setUsernameError('')
+
+    const uname = profile.username?.trim() || null
+    if (uname && !/^[a-zA-Z0-9_]{3,30}$/.test(uname)) {
+      setUsernameError('3–30 characters, letters, numbers, and underscores only.')
+      return
+    }
+
     setSaving(true)
     setMessage(null)
     const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       email: user.email,
+      username: uname,
       full_name: profile.full_name || null,
       birth_date: profile.birth_date || null,
       birth_time: profile.birth_time || null,
       birth_city: profile.birth_city || null,
     })
-    setMessage(error
-      ? { type: 'error', text: 'Failed to save. Please try again.' }
-      : { type: 'success', text: 'Profile saved!' }
-    )
+    if (error) {
+      if (error.message.includes('unique') || error.code === '23505') {
+        setUsernameError('That username is already taken.')
+      } else {
+        setMessage({ type: 'error', text: 'Failed to save. Please try again.' })
+      }
+    } else {
+      setMessage({ type: 'success', text: 'Profile saved!' })
+    }
     setSaving(false)
   }
 
@@ -177,12 +193,43 @@ export default function UserProfile() {
             )}
 
             <form onSubmit={handleSave} className="flex flex-col gap-4">
+
+              {/* Username — required for community features */}
+              <div className={`flex flex-col gap-1.5 rounded-xl p-3 border ${
+                profile.username ? 'border-purple-700/50 bg-purple-900/10' : 'border-amber-700/50 bg-amber-900/10'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
+                    Username
+                  </label>
+                  {!profile.username && (
+                    <span className="text-[10px] text-amber-400 font-semibold">Required to post in Community</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-500 text-sm">@</span>
+                  <input
+                    type="text"
+                    placeholder="pick_a_username"
+                    value={profile.username ?? ''}
+                    onChange={e => {
+                      setUsernameError('')
+                      setProfile(p => ({ ...p, username: e.target.value }))
+                    }}
+                    maxLength={30}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500">Letters, numbers, underscores · 3–30 chars · public-facing</p>
+                {usernameError && <p className="text-xs text-red-400">{usernameError}</p>}
+              </div>
+
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 uppercase tracking-wider">Email</label>
                 <p className="text-sm text-gray-300">{user?.email}</p>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 uppercase tracking-wider">Full Name</label>
+                <label className="text-xs text-gray-400 uppercase tracking-wider">Full Name <span className="normal-case text-gray-600">(private)</span></label>
                 <input type="text" placeholder="Your name" value={profile.full_name ?? ''}
                   onChange={e => setProfile(p => ({ ...p, full_name: e.target.value }))}
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-purple-500" />

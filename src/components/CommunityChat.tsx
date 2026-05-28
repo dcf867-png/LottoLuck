@@ -4,7 +4,7 @@ import {
   fetchPosts,
   postMessage,
   deletePost,
-  fetchDisplayName,
+  fetchUsername,
   type CommunityPost,
 } from '../lib/community'
 
@@ -28,10 +28,10 @@ export default function CommunityChat({ onAuthClick }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [body, setBody] = useState('')
-  const [displayName, setDisplayName] = useState('')
+  const [username, setUsername] = useState<string | null | 'loading'>('loading')
   const [posting, setPosting] = useState(false)
   const [postError, setPostError] = useState('')
-  const nameLoaded = useRef(false)
+  const userLoaded = useRef(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -47,17 +47,25 @@ export default function CommunityChat({ onAuthClick }: Props) {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    if (!user || nameLoaded.current) return
-    nameLoaded.current = true
-    fetchDisplayName(user.id, user.email ?? '').then(setDisplayName)
+    if (!user || userLoaded.current) return
+    userLoaded.current = true
+    fetchUsername(user.id).then(setUsername)
+  }, [user])
+
+  // Reset when user signs out
+  useEffect(() => {
+    if (!user) {
+      userLoaded.current = false
+      setUsername('loading')
+    }
   }, [user])
 
   async function handlePost() {
-    if (!user || !body.trim() || !displayName.trim()) return
+    if (!user || !body.trim() || typeof username !== 'string' || !username) return
     setPosting(true)
     setPostError('')
     try {
-      await postMessage(user.id, displayName.trim(), body.trim())
+      await postMessage(user.id, username, body.trim())
       setBody('')
       await load()
     } catch {
@@ -66,32 +74,33 @@ export default function CommunityChat({ onAuthClick }: Props) {
     setPosting(false)
   }
 
-  async function handleDelete(id: string) {
-    try {
-      await deletePost(id)
-      setPosts(prev => prev.filter(p => p.id !== id))
-    } catch { /* silent */ }
-  }
-
   return (
     <div className="flex flex-col h-full">
       <p className="text-[10px] font-bold uppercase tracking-wider text-purple-400 mb-3">
         💬 Community Chat
       </p>
 
-      {/* Compose */}
-      {user ? (
+      {/* Compose area */}
+      {!user ? (
+        <div className="mb-4 text-center py-3 bg-white/5 rounded-xl border border-white/10">
+          <p className="text-xs text-gray-500 mb-2">Sign in to join the chat</p>
+          <button
+            onClick={onAuthClick}
+            className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-1.5 rounded-full transition-colors"
+          >
+            Sign in
+          </button>
+        </div>
+      ) : username === 'loading' ? null : username === null ? (
+        <div className="mb-4 px-3 py-3 bg-amber-900/20 border border-amber-700/40 rounded-xl text-center">
+          <p className="text-xs text-amber-300 font-semibold mb-1">Username required to post</p>
+          <p className="text-[11px] text-gray-400">Set one in the <span className="text-amber-300 font-semibold">Profile</span> tab to join the conversation.</p>
+        </div>
+      ) : (
         <div className="flex flex-col gap-2 mb-4 bg-white/5 rounded-xl p-3 border border-white/10">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider shrink-0">As:</span>
-            <input
-              type="text"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              placeholder="Your name (required)"
-              maxLength={40}
-              className="flex-1 bg-transparent text-xs text-white placeholder-gray-600 focus:outline-none border-b border-white/10 pb-0.5"
-            />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-gray-500">Posting as</span>
+            <span className="text-[11px] font-semibold text-purple-300">@{username}</span>
           </div>
           <textarea
             value={body}
@@ -104,23 +113,13 @@ export default function CommunityChat({ onAuthClick }: Props) {
             <span className="text-[10px] text-gray-600">{280 - body.length} chars left</span>
             <button
               onClick={handlePost}
-              disabled={posting || !body.trim() || !displayName.trim()}
+              disabled={posting || !body.trim()}
               className="text-xs bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-semibold px-3 py-1 rounded-full transition-colors"
             >
               {posting ? 'Posting…' : 'Post'}
             </button>
           </div>
           {postError && <p className="text-xs text-red-400">{postError}</p>}
-        </div>
-      ) : (
-        <div className="mb-4 text-center py-3 bg-white/5 rounded-xl border border-white/10">
-          <p className="text-xs text-gray-500 mb-2">Sign in to join the chat</p>
-          <button
-            onClick={onAuthClick}
-            className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-1.5 rounded-full transition-colors"
-          >
-            Sign in
-          </button>
         </div>
       )}
 
@@ -147,12 +146,12 @@ export default function CommunityChat({ onAuthClick }: Props) {
           >
             <p className="text-sm text-gray-100 break-words">{post.body}</p>
             <div className="flex items-center justify-between text-[10px] text-gray-500">
-              <span className="font-semibold text-gray-400">{post.display_name}</span>
+              <span className="font-semibold text-purple-300">@{post.display_name}</span>
               <div className="flex items-center gap-2">
                 <span>{timeAgo(post.created_at)}</span>
                 {user?.id === post.user_id && (
                   <button
-                    onClick={() => handleDelete(post.id)}
+                    onClick={() => deletePost(post.id).then(() => setPosts(prev => prev.filter(p => p.id !== post.id)))}
                     className="text-gray-600 hover:text-red-400 transition-colors"
                     title="Delete"
                   >

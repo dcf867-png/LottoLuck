@@ -19,13 +19,13 @@ export interface CommunityComment {
 
 // ─── Profile helper ───────────────────────────────────────────────────────────
 
-export async function fetchDisplayName(userId: string, email: string): Promise<string> {
+export async function fetchUsername(userId: string): Promise<string | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('username')
     .eq('id', userId)
     .single()
-  return data?.full_name?.trim() || email.split('@')[0]
+  return data?.username ?? null
 }
 
 // ─── Community posts (general chat) ──────────────────────────────────────────
