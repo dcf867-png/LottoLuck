@@ -50,13 +50,15 @@ function PrizeLegend() {
   const toggle = useCallback(() => setOpen(o => !o), [])
   return (
     <div className="border border-white/10 rounded-lg overflow-hidden mb-4">
-      <button
-        onClick={toggle}
-        className="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-300 hover:bg-white/5 transition-colors"
-      >
-        <span className="font-medium tracking-wide">Prize Table</span>
-        <span className="text-gray-500">{open ? '▲' : '▼'}</span>
-      </button>
+      <div className="flex justify-center py-1">
+        <button
+          onClick={toggle}
+          className="flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors"
+        >
+          <span className="font-medium tracking-wide">Prize Table</span>
+          <span className="text-gray-500">{open ? '▲' : '▼'}</span>
+        </button>
+      </div>
       {open && (
         <div className="px-3 pb-3 flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
