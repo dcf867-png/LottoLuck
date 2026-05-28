@@ -27,7 +27,7 @@ function Stars({ count }: { count: number }) {
   return (
     <span className="text-yellow-400 text-sm">
       {'★'.repeat(count)}
-      <span className="text-white/20">{'★'.repeat(5 - count)}</span>
+      <span className="text-white/20">{'★'.repeat(4 - count)}</span>
     </span>
   )
 }
@@ -175,14 +175,15 @@ export default function LuckyCalendar({ chart }: Props) {
           {/* Legend */}
           <div className="flex gap-3 flex-wrap justify-center">
             {[
-              { color: 'bg-emerald-500/70', label: 'High' },
-              { color: 'bg-yellow-500/60', label: 'Good' },
-              { color: 'bg-orange-600/50', label: 'Moderate' },
-              { color: 'bg-white/10', label: 'Low' },
-            ].map(({ color, label }) => (
+              { color: 'bg-emerald-500/70', label: 'High', stars: 4 },
+              { color: 'bg-yellow-500/60', label: 'Good', stars: 3 },
+              { color: 'bg-orange-600/50', label: 'Moderate', stars: 2 },
+              { color: 'bg-white/10', label: 'Low', stars: 1 },
+            ].map(({ color, label, stars }) => (
               <div key={label} className="flex items-center gap-1">
                 <div className={`w-3 h-3 rounded ${color}`} />
                 <span className="text-[10px] text-white/50">{label}</span>
+                <Stars count={stars} />
               </div>
             ))}
           </div>

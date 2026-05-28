@@ -99,7 +99,7 @@ export function toDateStr(date: Date): string {
 export interface DayScore {
   date: string
   score: number       // 0–1
-  stars: number       // 1–5
+  stars: number       // 1–4
   moonPhaseName: string
   moonSign: string
   dayName: string
@@ -207,7 +207,7 @@ export function scoreDays(natal: NatalChart, days = 42, startDate?: Date): DaySc
 
     if (reasons.length === 0) reasons.push('Steady energy — reliable for measured moves')
 
-    results.push({ date: dateStr, score, stars: Math.max(1, Math.round(score * 5)), moonPhaseName: phaseName, moonSign: sign, dayName: DAY_NAMES[dow], reasons })
+    results.push({ date: dateStr, score, stars: score >= 0.70 ? 4 : score >= 0.50 ? 3 : score >= 0.30 ? 2 : 1, moonPhaseName: phaseName, moonSign: sign, dayName: DAY_NAMES[dow], reasons })
   }
 
   return results
