@@ -39,9 +39,11 @@ export default function AuthModal({ onClose }: Props) {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    })
     if (error) setError(error.message)
-    else setMessage('Password reset link sent to your email.')
+    else setMessage('Password reset link sent! Check your email.')
     setLoading(false)
   }
 

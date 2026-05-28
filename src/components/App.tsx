@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import AuthModal from './AuthModal'
+import ResetPasswordModal from './ResetPasswordModal'
 import UserProfile from './UserProfile'
 import { useAuth } from '../contexts/AuthContext'
 import pbCsv from '../data/powerball-1992-2009.csv?raw'
@@ -50,7 +51,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('powerball')
   const [activeGame, setActiveGame] = useState<Game>('powerball')
   const [mode, setMode] = useState<Mode>('full')
-  const { user } = useAuth()
+  const { user, isPasswordRecovery } = useAuth()
   const personalStateRef = useRef<PersonalTabState>({})
   const [showAuth, setShowAuth] = useState(false)
 
@@ -98,7 +99,8 @@ export default function App() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {isPasswordRecovery && <ResetPasswordModal />}
+      {showAuth && !isPasswordRecovery && <AuthModal onClose={() => setShowAuth(false)} />}
       <Header activeTab={activeTab} onTabChange={handleTabChange} onAuthClick={() => setShowAuth(true)} />
 
       {isGameTab && (

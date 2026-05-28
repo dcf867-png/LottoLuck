@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -23,6 +23,12 @@ export default function UserProfile() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+
+  // Change password state
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPw, setChangingPw] = useState(false)
+  const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -62,6 +68,29 @@ export default function UserProfile() {
     }
     setSaving(false)
   }
+
+  const handleChangePassword = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (newPassword !== confirmPassword) {
+      setPwMessage({ type: 'error', text: 'Passwords do not match.' })
+      return
+    }
+    if (newPassword.length < 6) {
+      setPwMessage({ type: 'error', text: 'Password must be at least 6 characters.' })
+      return
+    }
+    setChangingPw(true)
+    setPwMessage(null)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) {
+      setPwMessage({ type: 'error', text: error.message })
+    } else {
+      setPwMessage({ type: 'success', text: 'Password updated!' })
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+    setChangingPw(false)
+  }, [newPassword, confirmPassword])
 
   const handleDeleteAccount = async () => {
     setDeleting(true)
@@ -152,6 +181,63 @@ export default function UserProfile() {
             className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
           >
             {saving ? 'Saving...' : 'Save Profile'}
+          </button>
+        </form>
+      </section>
+
+      {/* Change password */}
+      <section className="panel">
+        <h2 className="panel-title text-blue-400">
+          <span className="dot" />Change Password
+        </h2>
+
+        {pwMessage && (
+          <div className={`mb-4 p-3 rounded-lg text-sm text-center ${
+            pwMessage.type === 'success'
+              ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
+              : 'bg-red-500/20 border border-red-500/30 text-red-300'
+          }`}>
+            {pwMessage.text}
+          </div>
+        )}
+
+        <form onSubmit={handleChangePassword} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400 uppercase tracking-wider">New Password</label>
+            <input
+              type="password"
+              placeholder="At least 6 characters"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400 uppercase tracking-wider">Confirm New Password</label>
+            <input
+              type="password"
+              placeholder="Repeat new password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+              className={`w-full bg-white/5 border rounded-lg px-4 py-2.5 text-white placeholder-gray-500 text-sm focus:outline-none ${
+                confirmPassword.length > 0 && newPassword !== confirmPassword
+                  ? 'border-red-500 focus:border-red-500'
+                  : 'border-white/10 focus:border-blue-500'
+              }`}
+            />
+            {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+              <p className="text-xs text-red-400">Passwords don't match</p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={changingPw || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+          >
+            {changingPw ? 'Updating…' : 'Update Password'}
           </button>
         </form>
       </section>
