@@ -54,7 +54,7 @@ function PrizeLegend() {
         onClick={toggle}
         className="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-300 hover:bg-white/5 transition-colors"
       >
-        <span className="font-medium tracking-wide">Prize Tiers</span>
+        <span className="font-medium tracking-wide">Prize Table</span>
         <span className="text-gray-500">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
