@@ -147,7 +147,7 @@ export default function LuckyCalendar({ chart }: Props) {
               const isToday = dateStr === todayStr
               const isSelected = dateStr === selected
 
-              let cellClass = 'aspect-square flex items-center justify-center rounded text-xs font-medium transition-all '
+              let cellClass = 'aspect-square flex flex-col items-center justify-center rounded text-xs font-medium transition-all '
 
               if (isPast) {
                 cellClass += 'bg-white/5 text-white/20 cursor-default'
@@ -166,7 +166,12 @@ export default function LuckyCalendar({ chart }: Props) {
                   className={cellClass}
                   onClick={() => !isPast && ds && setSelected(isSelected ? null : dateStr)}
                 >
-                  {day}
+                  <span>{day}</span>
+                  {ds && !isPast && (
+                    <span className="text-yellow-400 leading-none" style={{ fontSize: '7px', letterSpacing: '-1px' }}>
+                      {'★'.repeat(ds.stars)}
+                    </span>
+                  )}
                 </div>
               )
             })}
