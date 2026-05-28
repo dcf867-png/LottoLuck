@@ -1,11 +1,19 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { Draw } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
 import { prizeTier, loadSavedPicks, matchPickAgainstDraws, type DrawResult } from '../lib/trackRecord'
 import type { SavedPick } from '../lib/types'
 import { fetchWins, postWin, deleteWin, type CommunityWin } from '../lib/wins'
+import {
+  fetchComments,
+  postComment,
+  deleteComment,
+  fetchDisplayName,
+  type CommunityComment,
+} from '../lib/community'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import CommunityChat from './CommunityChat'
 
 interface Props {
   pbDraws: Draw[]
@@ -56,7 +64,6 @@ function getDetectedWins(pbDraws: Draw[], mmDraws: Draw[]): DetectedWin[] {
       }
     }
   }
-  // Most recent draws first
   return result.sort((a, b) => b.draw.date.localeCompare(a.draw.date))
 }
 
@@ -74,6 +81,115 @@ function SourceBadge({ source }: { source: SavedPick['source'] | null }) {
     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${cls}`}>
       {label}
     </span>
+  )
+}
+
+// ─── Win comments ─────────────────────────────────────────────────────────────
+
+function WinComments({
+  winId,
+  currentUserId,
+  userDisplayName,
+  onAuthClick,
+}: {
+  winId: string
+  currentUserId: string | undefined
+  userDisplayName: string
+  onAuthClick: () => void
+}) {
+  const [comments, setComments] = useState<CommunityComment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [body, setBody] = useState('')
+  const [posting, setPosting] = useState(false)
+  const [postError, setPostError] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      setComments(await fetchComments(winId))
+    } catch { /* silent */ }
+    setLoading(false)
+  }, [winId])
+
+  useEffect(() => { load() }, [load])
+
+  async function handlePost() {
+    if (!currentUserId || !body.trim() || !userDisplayName.trim()) return
+    setPosting(true)
+    setPostError('')
+    try {
+      await postComment(winId, currentUserId, userDisplayName, body.trim())
+      setBody('')
+      await load()
+    } catch {
+      setPostError('Failed to post. Try again.')
+    }
+    setPosting(false)
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await deleteComment(id)
+      setComments(prev => prev.filter(c => c.id !== id))
+    } catch { /* silent */ }
+  }
+
+  return (
+    <div className="border-t border-white/10 pt-2 flex flex-col gap-2">
+      {loading && <p className="text-[10px] text-gray-600">Loading comments…</p>}
+
+      {!loading && comments.length === 0 && (
+        <p className="text-[10px] text-gray-600 italic">No comments yet.</p>
+      )}
+
+      {!loading && comments.map(c => (
+        <div key={c.id} className="flex flex-col gap-0.5 bg-white/5 rounded-lg px-2.5 py-1.5">
+          <p className="text-xs text-gray-200 break-words">{c.body}</p>
+          <div className="flex items-center justify-between text-[10px] text-gray-500">
+            <span className="font-semibold text-gray-400">{c.display_name}</span>
+            <div className="flex items-center gap-2">
+              <span>{timeAgo(c.created_at)}</span>
+              {currentUserId === c.user_id && (
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  className="text-gray-600 hover:text-red-400 transition-colors"
+                  title="Delete"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {currentUserId ? (
+        <div className="flex gap-2 items-end mt-1">
+          <textarea
+            value={body}
+            onChange={e => setBody(e.target.value.slice(0, 280))}
+            placeholder="Add a comment…"
+            rows={1}
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 resize-none"
+          />
+          <button
+            onClick={handlePost}
+            disabled={posting || !body.trim()}
+            className="text-[11px] bg-purple-700 hover:bg-purple-600 disabled:opacity-40 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0"
+          >
+            {posting ? '…' : 'Reply'}
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={onAuthClick}
+          className="text-[11px] text-purple-400 hover:text-purple-300 text-left transition-colors"
+        >
+          Sign in to comment →
+        </button>
+      )}
+      {postError && <p className="text-[10px] text-red-400">{postError}</p>}
+    </div>
   )
 }
 
@@ -147,7 +263,6 @@ function QuickPostForm({
         <button onClick={onCancel} className="text-gray-500 hover:text-white text-xs">Cancel</button>
       </div>
 
-      {/* Win summary */}
       <div className={`rounded-lg px-3 py-2 text-center ${isJackpot ? 'bg-yellow-900/30 border border-yellow-700/40' : 'bg-green-950/30 border border-green-800/40'}`}>
         <p className={`font-bold text-sm ${isJackpot ? 'text-yellow-400' : 'text-green-400'}`}>
           {isJackpot ? '🏆 JACKPOT' : `🎉 ${tier}`}
@@ -157,7 +272,6 @@ function QuickPostForm({
         </p>
       </div>
 
-      {/* Display name */}
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-gray-400 uppercase tracking-wider">Display Name</label>
         <input
@@ -169,7 +283,6 @@ function QuickPostForm({
         />
       </div>
 
-      {/* Pick source */}
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-gray-400 uppercase tracking-wider">
           Pick Source <span className="text-gray-600 normal-case">(optional)</span>
@@ -193,7 +306,6 @@ function QuickPostForm({
         </div>
       </div>
 
-      {/* Message */}
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-gray-400 uppercase tracking-wider">
           Message <span className="text-gray-600 normal-case">(optional · {280 - message.length} chars left)</span>
@@ -207,7 +319,6 @@ function QuickPostForm({
         />
       </div>
 
-      {/* Honor confirmation */}
       <label className="flex items-start gap-2 cursor-pointer select-none">
         <input
           type="checkbox"
@@ -291,7 +402,6 @@ function DetectedWinCard({
         {' '}on {formatDrawDate(draw.date)}
       </p>
 
-      {/* Draw numbers with matches highlighted */}
       <div className="flex flex-wrap gap-1 items-center">
         {draw.whites.map((w, i) => (
           <span
@@ -331,18 +441,23 @@ function WinCard({
   win,
   draws,
   currentUserId,
+  userDisplayName,
   onDelete,
+  onAuthClick,
 }: {
   win: CommunityWin
   draws: { pb: Draw[]; mm: Draw[] }
   currentUserId: string | undefined
+  userDisplayName: string
   onDelete: (id: string) => void
+  onAuthClick: () => void
 }) {
   const cfg = GAME_CONFIG[win.game]
   const isJackpot = win.prize_tier === 'JACKPOT'
   const isOwner = currentUserId === win.user_id
   const allDraws = win.game === 'powerball' ? draws.pb : draws.mm
   const draw = allDraws.find(d => d.date === win.draw_date)
+  const [showComments, setShowComments] = useState(false)
 
   return (
     <div className="bg-black/25 rounded-xl p-4 flex flex-col gap-3 border border-white/5">
@@ -408,8 +523,25 @@ function WinCard({
 
       <div className="flex items-center justify-between text-[10px] text-gray-500">
         <span>{win.display_name ?? 'Anonymous'}</span>
-        <span>{timeAgo(win.created_at)}</span>
+        <div className="flex items-center gap-3">
+          <span>{timeAgo(win.created_at)}</span>
+          <button
+            onClick={() => setShowComments(v => !v)}
+            className="text-purple-400 hover:text-purple-300 font-semibold transition-colors"
+          >
+            {showComments ? '▲ Hide' : '💬 Comments'}
+          </button>
+        </div>
       </div>
+
+      {showComments && (
+        <WinComments
+          winId={win.id}
+          currentUserId={currentUserId}
+          userDisplayName={userDisplayName}
+          onAuthClick={onAuthClick}
+        />
+      )}
     </div>
   )
 }
@@ -421,6 +553,8 @@ export default function Winners({ pbDraws, mmDraws, onAuthClick }: Props) {
   const [wins, setWins] = useState<CommunityWin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [userDisplayName, setUserDisplayName] = useState('')
+  const nameLoaded = useRef(false)
 
   const loadWins = useCallback(async () => {
     setLoading(true)
@@ -436,7 +570,12 @@ export default function Winners({ pbDraws, mmDraws, onAuthClick }: Props) {
 
   useEffect(() => { loadWins() }, [loadWins])
 
-  // Scan Track Record for prize-tier matches
+  useEffect(() => {
+    if (!user || nameLoaded.current) return
+    nameLoaded.current = true
+    fetchDisplayName(user.id, user.email ?? '').then(setUserDisplayName)
+  }, [user])
+
   const detectedWins = useMemo(
     () => (user ? getDetectedWins(pbDraws, mmDraws) : []),
     [user, pbDraws, mmDraws]
@@ -460,86 +599,91 @@ export default function Winners({ pbDraws, mmDraws, onAuthClick }: Props) {
   }
 
   return (
-    <section className="panel">
-      <h3 className="panel-title text-amber-400 mb-1">
-        <span className="dot" />🏆 Community Wins
-      </h3>
-      <p className="text-xs text-gray-400 mb-4">
-        Picks verified in Track Record before the draw. Ticket purchase self-reported.
-      </p>
+    <div className="flex flex-col gap-4">
+      {/* Your detected wins — full width above the columns */}
+      {user && detectedWins.length > 0 && (
+        <section className="panel">
+          <p className="text-[10px] text-teal-400 font-bold uppercase tracking-wider mb-2">
+            🎯 Your Wins Detected
+          </p>
+          <div className="flex flex-col gap-2">
+            {detectedWins.map((d) => (
+              <DetectedWinCard
+                key={`${d.pick.id}-${d.draw.date}`}
+                detected={d}
+                alreadyPosted={isAlreadyPosted(d)}
+                userId={user.id}
+                onPosted={loadWins}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Your wins from Track Record */}
-      {user ? (
-        detectedWins.length > 0 ? (
-          <div className="mb-6">
-            <p className="text-[10px] text-teal-400 font-bold uppercase tracking-wider mb-2">
-              🎯 Your Wins Detected
+      {/* Side-by-side: Chat | Wins */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+
+        {/* Left — Community Chat */}
+        <section className="panel">
+          <CommunityChat onAuthClick={onAuthClick} />
+        </section>
+
+        {/* Right — Community Wins */}
+        <section className="panel flex flex-col gap-3">
+          <div>
+            <h3 className="panel-title text-amber-400 mb-0.5">
+              <span className="dot" />🏆 Community Wins
+            </h3>
+            <p className="text-[10px] text-gray-500">
+              Picks verified in Track Record · ticket purchase self-reported
             </p>
-            <div className="flex flex-col gap-2">
-              {detectedWins.map((d) => (
-                <DetectedWinCard
-                  key={`${d.pick.id}-${d.draw.date}`}
-                  detected={d}
-                  alreadyPosted={isAlreadyPosted(d)}
-                  userId={user.id}
-                  onPosted={loadWins}
+          </div>
+
+          {!user && (
+            <div className="text-center py-2">
+              <p className="text-xs text-gray-500 mb-2">Sign in to see if your saved picks hit!</p>
+              <button
+                onClick={onAuthClick}
+                className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-1.5 rounded-full transition-colors"
+              >
+                Sign in
+              </button>
+            </div>
+          )}
+
+          {loading && (
+            <div className="text-center py-8 text-gray-400 text-sm">Loading wins…</div>
+          )}
+          {!loading && error && (
+            <div className="text-center py-6">
+              <p className="text-red-400 text-sm mb-2">{error}</p>
+              <button onClick={loadWins} className="text-xs text-gray-400 hover:text-white underline">Retry</button>
+            </div>
+          )}
+          {!loading && !error && wins.length === 0 && (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              No wins posted yet.
+              <br />
+              <span className="text-xs text-gray-600">Be the first to share a win!</span>
+            </div>
+          )}
+          {!loading && !error && wins.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {wins.map(win => (
+                <WinCard
+                  key={win.id}
+                  win={win}
+                  draws={{ pb: pbDraws, mm: mmDraws }}
+                  currentUserId={user?.id}
+                  userDisplayName={userDisplayName}
+                  onDelete={handleDelete}
+                  onAuthClick={onAuthClick}
                 />
               ))}
             </div>
-            <div className="border-t border-white/10 my-4" />
-          </div>
-        ) : (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-400 text-center">
-            No wins detected in your Track Record yet. Keep generating picks!
-          </div>
-        )
-      ) : (
-        <div className="mb-4 text-center">
-          <p className="text-xs text-gray-500 mb-2">Sign in to see if your saved picks hit!</p>
-          <button
-            onClick={onAuthClick}
-            className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-1.5 rounded-full transition-colors"
-          >
-            Sign in
-          </button>
-        </div>
-      )}
-
-      {/* Community feed */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Community Feed</p>
-        <p className="text-[10px] text-gray-600 italic">Numbers in Track Record · ticket purchase unverified</p>
+          )}
+        </section>
       </div>
-
-      {loading && (
-        <div className="text-center py-8 text-gray-400 text-sm">Loading wins…</div>
-      )}
-      {!loading && error && (
-        <div className="text-center py-8">
-          <p className="text-red-400 text-sm mb-2">{error}</p>
-          <button onClick={loadWins} className="text-xs text-gray-400 hover:text-white underline">Retry</button>
-        </div>
-      )}
-      {!loading && !error && wins.length === 0 && (
-        <div className="text-center py-10 text-gray-500 text-sm">
-          No wins posted yet.
-          <br />
-          <span className="text-xs text-gray-600">Be the first to share a win!</span>
-        </div>
-      )}
-      {!loading && !error && wins.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {wins.map(win => (
-            <WinCard
-              key={win.id}
-              win={win}
-              draws={{ pb: pbDraws, mm: mmDraws }}
-              currentUserId={user?.id}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
-    </section>
+    </div>
   )
 }
