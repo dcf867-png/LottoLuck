@@ -42,9 +42,16 @@ function DrawRow({ draw, game }: { draw: Draw; game: 'powerball' | 'megamillions
   )
 }
 
+type RangeEntry = { draw: Draw; game: 'powerball' | 'megamillions' }
+
 export default function LatestDraws({ pbDraws, mmDraws }: Props) {
   const [date, setDate] = useState('')
   const [lookupResult, setLookupResult] = useState<{ pb: Draw | null; mm: Draw | null } | null>(null)
+
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [rangeResults, setRangeResults] = useState<RangeEntry[] | null>(null)
+  const [rangeError, setRangeError] = useState('')
 
   const pbRecent = pbDraws.slice(-5).reverse()
   const mmRecent = mmDraws.slice(-5).reverse()
@@ -61,6 +68,27 @@ export default function LatestDraws({ pbDraws, mmDraws }: Props) {
     setLookupResult(null)
   }
 
+  function handleRangeSearch() {
+    setRangeError('')
+    if (!fromDate || !toDate) { setRangeError('Please enter both a from and to date.'); return }
+    if (fromDate > toDate) { setRangeError('"From" date must be before "To" date.'); return }
+    const pb: RangeEntry[] = pbDraws
+      .filter(d => d.date >= fromDate && d.date <= toDate)
+      .map(d => ({ draw: d, game: 'powerball' as const }))
+    const mm: RangeEntry[] = mmDraws
+      .filter(d => d.date >= fromDate && d.date <= toDate)
+      .map(d => ({ draw: d, game: 'megamillions' as const }))
+    const combined = [...pb, ...mm].sort((a, b) => b.draw.date.localeCompare(a.draw.date))
+    setRangeResults(combined)
+  }
+
+  function handleRangeClear() {
+    setFromDate('')
+    setToDate('')
+    setRangeResults(null)
+    setRangeError('')
+  }
+
   const hasAnyResult = lookupResult && (lookupResult.pb || lookupResult.mm)
   const noResults = lookupResult && !lookupResult.pb && !lookupResult.mm
 
@@ -68,7 +96,7 @@ export default function LatestDraws({ pbDraws, mmDraws }: Props) {
     <>
       {/* Draw Date Lookup */}
       <section className="panel">
-        <h2 className="panel-title text-orange-400">
+        <h2 className="panel-title text-white">
           <span className="dot" />Draw Date Lookup
         </h2>
         <p className="text-xs text-gray-400 mb-3">Enter a draw date to see the winning numbers.</p>
@@ -113,6 +141,68 @@ export default function LatestDraws({ pbDraws, mmDraws }: Props) {
                 <DrawRow draw={lookupResult.mm} game="megamillions" />
               </div>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Date Range Lookup */}
+      <section className="panel">
+        <h2 className="panel-title text-white">
+          <span className="dot" />Date Range Lookup
+        </h2>
+        <p className="text-xs text-gray-400 mb-3">List all draws between two dates.</p>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2 items-center">
+            <span className="text-xs text-gray-500 w-8 shrink-0">From</span>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={e => { setFromDate(e.target.value); setRangeResults(null) }}
+              className="flex-1 bg-black/40 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-orange-500"
+            />
+          </div>
+          <div className="flex gap-2 items-center">
+            <span className="text-xs text-gray-500 w-8 shrink-0">To</span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={e => { setToDate(e.target.value); setRangeResults(null) }}
+              className="flex-1 bg-black/40 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:border-orange-500"
+            />
+          </div>
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={handleRangeSearch}
+              disabled={!fromDate || !toDate}
+              className="flex-1 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+            >
+              Search
+            </button>
+            {(fromDate || toDate || rangeResults) && (
+              <button
+                onClick={handleRangeClear}
+                className="text-sm text-gray-500 hover:text-white px-3 rounded-lg border border-white/10 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {rangeError && <p className="text-xs text-red-400 mt-2">{rangeError}</p>}
+
+        {rangeResults !== null && rangeResults.length === 0 && (
+          <p className="text-xs text-gray-500 mt-3">No draws found in that date range.</p>
+        )}
+
+        {rangeResults !== null && rangeResults.length > 0 && (
+          <div className="mt-4 flex flex-col gap-1 max-h-96 overflow-y-auto">
+            <p className="text-[10px] text-gray-500 mb-1">{rangeResults.length} draw{rangeResults.length !== 1 ? 's' : ''} found</p>
+            {rangeResults.map(({ draw, game }) => (
+              <div key={`${game}-${draw.date}`} className="bg-black/25 rounded-lg py-2 px-3">
+                <DrawRow draw={draw} game={game} />
+              </div>
+            ))}
           </div>
         )}
       </section>

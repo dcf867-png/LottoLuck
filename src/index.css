@@ -53,7 +53,7 @@ body::before {
 
 /* Glassmorphism panel — each section is a full frosted-glass card */
 .panel {
-  background: rgba(10, 5, 25, 0.6);
+  background: rgba(10, 5, 25, 0.78);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
