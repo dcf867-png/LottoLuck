@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { Draw, Game } from '../lib/types'
+import type { Draw } from '../lib/types'
 import { GAME_CONFIG } from '../lib/types'
 import { prizeTier, loadSavedPicks, matchPickAgainstDraws, type DrawResult } from '../lib/trackRecord'
 import type { SavedPick } from '../lib/types'
@@ -476,7 +476,7 @@ export default function Winners({ pbDraws, mmDraws, onAuthClick }: Props) {
               🎯 Your Wins Detected
             </p>
             <div className="flex flex-col gap-2">
-              {detectedWins.map((d, i) => (
+              {detectedWins.map((d) => (
                 <DetectedWinCard
                   key={`${d.pick.id}-${d.draw.date}`}
                   detected={d}
