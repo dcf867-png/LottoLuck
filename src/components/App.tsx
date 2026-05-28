@@ -55,10 +55,13 @@ export default function App() {
   const personalStateRef = useRef<PersonalTabState>({})
   const [showAuth, setShowAuth] = useState(false)
 
-  // Clear personal state when user signs out
+  // Clear personal state and reset to default tab when user signs out
   useEffect(() => {
     if (!user) {
       personalStateRef.current = {}
+      setActiveTab('powerball')
+      setActiveGame('powerball')
+      setMode('full')
     }
   }, [user])
 
