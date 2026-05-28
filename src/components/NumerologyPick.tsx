@@ -77,7 +77,7 @@ export default function NumerologyPick({ sharedBirthDate, sharedName }: Props) {
 
   return (
     <section className="panel">
-      <h3 className="panel-title text-purple-400">
+      <h3 className="panel-title text-teal-400">
         <span className="dot" />Numerology Pick
       </h3>
       <p className="text-xs text-gray-400 mb-4">No personal data is collected or shared with anyone.</p>
@@ -98,7 +98,7 @@ export default function NumerologyPick({ sharedBirthDate, sharedName }: Props) {
         {error && <p className="text-xs text-red-400">{error}</p>}
         <button
           onClick={handleGenerate}
-          className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+          className="bg-teal-600 hover:bg-teal-500 text-black text-sm font-medium py-2 rounded-lg transition-colors"
         >
           Generate My Pick
         </button>
