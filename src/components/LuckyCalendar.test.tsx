@@ -12,7 +12,7 @@ describe('LuckyCalendar', () => {
   })
   afterEach(() => { vi.useRealTimers() })
 
-  it('opens Top Lucky Days by default and collapses it from the heading', () => {
+  it('starts Top Lucky Days closed and opens it from the heading', () => {
     render(
       <LuckyCalendar
         title="Test Calendar"
@@ -24,14 +24,14 @@ describe('LuckyCalendar', () => {
     )
 
     const heading = screen.getByRole('button', { name: /top lucky days/i })
-    expect(heading.getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getAllByText(/^Moon in [A-Za-z]+$/)).toHaveLength(5)
-
-    fireEvent.click(heading)
     expect(heading.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryAllByText(/^Moon in [A-Za-z]+$/)).toHaveLength(0)
 
     fireEvent.click(heading)
+    expect(heading.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getAllByText(/^Moon in [A-Za-z]+$/)).toHaveLength(5)
+
+    fireEvent.click(heading)
+    expect(screen.queryAllByText(/^Moon in [A-Za-z]+$/)).toHaveLength(0)
   })
 })

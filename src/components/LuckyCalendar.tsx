@@ -55,7 +55,7 @@ export default function LuckyCalendar({ title, description, chart, scoreDays, mo
   // Calendar state
   const [offset, setOffset] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
-  const [topDaysOpen, setTopDaysOpen] = useState(true)
+  const [topDaysOpen, setTopDaysOpen] = useState(false)
   const month = monthAt(offset)
   const monthStart = month.start.getTime()
   const monthLast = month.last.getTime()
