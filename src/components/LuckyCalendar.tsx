@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import type { NatalChart } from '../lib/astrology'
+import type { CalendarMonth } from '../lib/calendarMonths'
 import { toDateStr, type DayScore } from '../lib/luckyDays'
 
 interface Props {
@@ -7,10 +8,9 @@ interface Props {
   description: string
   chart: NatalChart | null
   scoreDays: (chart: NatalChart, days: number, startDate: Date) => DayScore[]
+  monthAt: (offset: number) => CalendarMonth
+  showRegularDate?: boolean
 }
-
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
-                     'July', 'August', 'September', 'October', 'November', 'December']
 
 const PHASE_ICONS: Record<string, string> = {
   'New Moon': '🌑', 'Full Moon': '🌕', 'First Quarter': '🌓', 'Last Quarter': '🌗',
@@ -47,15 +47,17 @@ function DaySummary({ day }: { day: DayScore }) {
   )
 }
 
-export default function LuckyCalendar({ title, description, chart, scoreDays }: Props) {
+export default function LuckyCalendar({ title, description, chart, scoreDays, monthAt, showRegularDate }: Props) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const todayStr = toDateStr(today)
 
   // Calendar state
-  const [viewYear, setViewYear] = useState(today.getFullYear())
-  const [viewMonth, setViewMonth] = useState(today.getMonth())
+  const [offset, setOffset] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
+  const month = monthAt(offset)
+  const monthStart = month.start.getTime()
+  const monthLast = month.last.getTime()
 
   // Score cache
   const scoreCacheRef = useRef<Map<string, DayScore>>(new Map())
@@ -73,8 +75,8 @@ export default function LuckyCalendar({ title, description, chart, scoreDays }: 
     if (!chart) return
     const now = new Date()
     now.setHours(0, 0, 0, 0)
-    const firstOfMonth = new Date(viewYear, viewMonth, 1)
-    const lastOfMonth = new Date(viewYear, viewMonth + 1, 0)
+    const firstOfMonth = new Date(monthStart)
+    const lastOfMonth = new Date(monthLast)
     if (lastOfMonth < now) return
 
     const startDate = firstOfMonth < now ? new Date(now) : new Date(firstOfMonth)
@@ -86,12 +88,12 @@ export default function LuckyCalendar({ title, description, chart, scoreDays }: 
     }
     if (allCached) return
 
-    const daysToScore = Math.ceil((lastOfMonth.getTime() - startDate.getTime()) / 86400000) + 1
+    const daysToScore = Math.round((lastOfMonth.getTime() - startDate.getTime()) / 86400000) + 1
     for (const s of scoreDays(chart, daysToScore, startDate)) {
       scoreCacheRef.current.set(s.date, s)
     }
     setCacheVersion(v => v + 1)
-  }, [chart, viewYear, viewMonth, scoreDays])
+  }, [chart, monthStart, monthLast, scoreDays])
 
   const scoreMap = useMemo(() => new Map(scoreCacheRef.current), [cacheVersion])
 
@@ -103,30 +105,36 @@ export default function LuckyCalendar({ title, description, chart, scoreDays }: 
   const selectedDay = selected ? scoreMap.get(selected) ?? null : null
 
   // Calendar helpers
-  const firstDow = new Date(viewYear, viewMonth, 1).getDay()
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
   const cells: (number | null)[] = [
-    ...Array(firstDow).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ...Array(month.start.getDay()).fill(null),
+    ...Array.from({ length: month.days }, (_, i) => i + 1),
   ]
   while (cells.length % 7 !== 0) cells.push(null)
 
   function canGoBack() {
-    return viewYear > today.getFullYear() || viewMonth > today.getMonth()
+    return offset > 0
   }
   function canGoForward() {
     return true
   }
   function prevMonth() {
     if (!canGoBack()) return
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) } else setViewMonth(m => m - 1)
+    setOffset(o => o - 1)
   }
   function nextMonth() {
     if (!canGoForward()) return
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) } else setViewMonth(m => m + 1)
+    setOffset(o => o + 1)
   }
-  function cellDateStr(day: number): string {
-    return `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  function cellDate(day: number): Date {
+    const date = new Date(month.start)
+    date.setDate(date.getDate() + day - 1)
+    return date
+  }
+  function showDay(dateStr: string) {
+    let target = 0
+    while (toDateStr(monthAt(target).last) < dateStr) target++
+    setOffset(target)
+    setSelected(dateStr)
   }
   function formatDate(dateStr: string): string {
     const [y, m, d] = dateStr.split('-').map(Number)
@@ -141,9 +149,34 @@ export default function LuckyCalendar({ title, description, chart, scoreDays }: 
       {/* Month navigation */}
       <div className="flex items-center justify-between">
         <button onClick={prevMonth} disabled={!canGoBack()} className="text-purple-400 hover:text-purple-300 disabled:opacity-20 text-4xl px-2">‹</button>
-        <span className="text-sm font-semibold text-white">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+        <div className="flex flex-col items-center gap-0.5 text-center">
+          <span className="text-sm font-semibold text-white">{month.title}</span>
+          {month.subtitle && <span className="text-[11px] text-gray-300">{month.subtitle}</span>}
+        </div>
         <button onClick={nextMonth} disabled={!canGoForward()} className="text-purple-400 hover:text-purple-300 disabled:opacity-20 text-4xl px-2">›</button>
       </div>
+
+      {/* Months of the year */}
+      {month.position && (
+        <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${month.position.total}, 1fr)` }}>
+          {Array.from({ length: month.position.total }, (_, i) => {
+            const target = offset + i - month.position!.index
+            const isCurrent = i === month.position!.index
+            return (
+              <button
+                key={i}
+                onClick={() => setOffset(target)}
+                disabled={target < 0}
+                aria-label={`Month ${i + 1}`}
+                aria-current={isCurrent ? 'true' : undefined}
+                className={`h-7 rounded text-[11px] font-medium transition-colors disabled:opacity-30 ${isCurrent ? 'bg-purple-600 text-white' : 'bg-white/10 text-gray-200 hover:bg-white/20'}`}
+              >
+                {i + 1}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1 text-center">
@@ -152,7 +185,8 @@ export default function LuckyCalendar({ title, description, chart, scoreDays }: 
         ))}
         {cells.map((day, idx) => {
           if (day === null) return <div key={`e-${idx}`} />
-          const dateStr = cellDateStr(day)
+          const date = cellDate(day)
+          const dateStr = toDateStr(date)
           const ds = scoreMap.get(dateStr)
           const isPast = dateStr < todayStr
           const isToday = dateStr === todayStr
@@ -166,7 +200,12 @@ export default function LuckyCalendar({ title, description, chart, scoreDays }: 
           if (isSelected && !isPast) cls += ' ring-2 ring-white'
           return (
             <div key={dateStr} className={cls} onClick={() => !isPast && ds && setSelected(isSelected ? null : dateStr)}>
-              <span>{day}</span>
+              <span className={showRegularDate ? 'leading-none' : undefined}>{day}</span>
+              {showRegularDate && (
+                <span className="leading-tight opacity-80" style={{ fontSize: 'clamp(7px, 2.3vw, 10px)' }}>
+                  {date.getMonth() + 1}/{date.getDate()}
+                </span>
+              )}
               {ds && !isPast && (
                 <span className="text-yellow-300 leading-none whitespace-nowrap" style={{ fontSize: 'clamp(7px, 2.3vw, 11px)', letterSpacing: '-0.5px', textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
                   {'★'.repeat(ds.stars)}
@@ -217,10 +256,7 @@ export default function LuckyCalendar({ title, description, chart, scoreDays }: 
             <div
               key={day.date}
               className="bg-black/25 rounded-lg px-4 py-3 flex flex-col gap-1.5 cursor-pointer hover:bg-black/40 transition-colors"
-              onClick={() => {
-                const [y, m] = day.date.split('-').map(Number)
-                setViewYear(y); setViewMonth(m - 1); setSelected(day.date)
-              }}
+              onClick={() => showDay(day.date)}
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-white">{formatDate(day.date)}</span>

@@ -138,6 +138,24 @@ export function monthsInYear(year: number): number {
   return monthsOfYear(year).length - 1
 }
 
+export interface BabylonianMonth {
+  name: string
+  start: Date
+  days: number
+}
+
+export function babylonianMonths(year: number): BabylonianMonth[] {
+  const months = monthsOfYear(year)
+  return months.slice(0, -1).map((start, i) => {
+    const utc = new Date(start * 86400000)
+    return {
+      name: MONTH_NAMES[i],
+      start: new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate()),
+      days: months[i + 1] - start,
+    }
+  })
+}
+
 export interface BabylonianDate {
   year: number
   monthIndex: number

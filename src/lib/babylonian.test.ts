@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { babylonianDate, favorableWeight, monthsInYear, MONTH_NAMES } from './babylonian'
+import { afterEach, describe, it, expect, vi } from 'vitest'
+import { babylonianDate, babylonianMonths, favorableWeight, monthsInYear, MONTH_NAMES } from './babylonian'
+import { babylonianMonthAt, regularMonthAt } from './calendarMonths'
 import { buildNatalChart, getTransits } from './astrology'
 import { generateAstrologyPick } from './astroLucky'
 import { scoreDays } from './luckyDays'
@@ -49,6 +50,49 @@ describe('babylonian calendar', () => {
     expect(favorableWeight(0, 4)).toBe(0.5)
     expect(favorableWeight(0, 2)).toBe(0)
     expect(favorableWeight(12, 17)).toBe(1)
+  })
+})
+
+describe('calendar months', () => {
+  afterEach(() => { vi.useRealTimers() })
+
+  function setToday(date: Date) {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(date)
+  }
+
+  it('lists all 13 months of a 13-month year end to end', () => {
+    const months = babylonianMonths(2026)
+    expect(months.map(m => m.name)).toEqual(MONTH_NAMES)
+    expect(months[0].start.getTime()).toBe(localDate(2026, 3, 21).setHours(0))
+    months.slice(1).forEach((month, i) => {
+      const expected = new Date(months[i].start)
+      expected.setDate(expected.getDate() + months[i].days)
+      expect(month.start.getTime()).toBe(expected.getTime())
+    })
+    expect(babylonianMonths(2027).map(m => m.name)).toEqual(MONTH_NAMES.slice(0, 12))
+  })
+
+  it('agrees with the date shown for every day of a month', () => {
+    const { start, days, name } = babylonianMonths(2026)[7]
+    for (let i = 0; i < days; i++) {
+      const day = new Date(start)
+      day.setDate(day.getDate() + i)
+      expect(babylonianDate(day)).toMatchObject({ monthName: name, day: i + 1 })
+    }
+  })
+
+  it('steps through the 13th month into the next year', () => {
+    setToday(localDate(2026, 11, 1))
+    expect(babylonianMonthAt(0)).toMatchObject({ title: 'Arahsamna', position: { index: 7, total: 13 } })
+    expect(babylonianMonthAt(5)).toMatchObject({ title: 'Second Addaru', position: { index: 12, total: 13 } })
+    expect(babylonianMonthAt(6)).toMatchObject({ title: 'Nisannu', position: { index: 0, total: 12 } })
+  })
+
+  it('keeps the regular calendar on January to December', () => {
+    setToday(localDate(2026, 11, 1))
+    expect(regularMonthAt(0)).toMatchObject({ title: 'November 2026', days: 30 })
+    expect(regularMonthAt(2)).toMatchObject({ title: 'January 2027', days: 31 })
   })
 })
 

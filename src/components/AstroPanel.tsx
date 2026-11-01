@@ -3,6 +3,7 @@ import { GAME_CONFIG } from '../lib/types'
 import type { NatalChart } from '../lib/astrology'
 import { generateAstrologyPick } from '../lib/astroLucky'
 import { savePick } from '../lib/trackRecord'
+import { babylonianMonthAt, regularMonthAt } from '../lib/calendarMonths'
 import { scoreDays } from '../lib/luckyDays'
 import { scoreModernDays } from '../lib/modernLuckyDays'
 import DateInput from './DateInput'
@@ -213,9 +214,11 @@ export default function AstroPanel({
 
         <LuckyCalendar
           title="Babylonian Lucky Calendar"
-          description="Your luckiest days based on the Babylonian lunar calendar, ancient tablet lists of favorable days, and your birth chart."
+          description="Your luckiest days based on the Babylonian lunar calendar, ancient tablet lists of favorable days, and your birth chart. Each month runs from one first crescent to the next, and some years have a 13th month. The small number in each square is the regular date."
           chart={chart}
           scoreDays={scoreDays}
+          monthAt={babylonianMonthAt}
+          showRegularDate
         />
 
         <div className="border-t border-white/10" />
@@ -225,6 +228,7 @@ export default function AstroPanel({
           description="Your luckiest days based on lunar cycles, personal numerology, and planetary influences."
           chart={chart}
           scoreDays={scoreModernDays}
+          monthAt={regularMonthAt}
         />
 
       </div>
