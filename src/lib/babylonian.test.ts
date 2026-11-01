@@ -3,6 +3,7 @@ import { babylonianDate, favorableWeight, monthsInYear, MONTH_NAMES } from './ba
 import { buildNatalChart, getTransits } from './astrology'
 import { generateAstrologyPick } from './astroLucky'
 import { scoreDays } from './luckyDays'
+import { scoreModernDays } from './modernLuckyDays'
 
 function localDate(y: number, m: number, d: number): Date {
   return new Date(y, m - 1, d, 12)
@@ -70,6 +71,40 @@ describe('sky positions', () => {
 
   it('returns all seven bodies for a given date', () => {
     expect(getTransits(localDate(2026, 11, 1))).toHaveLength(7)
+  })
+
+  // Greenwich, 2000-01-01 12:00 UT rises at about 24° Aries
+  it('works out the modern rising sign', () => {
+    const chart = buildNatalChart('2000-01-01', '12:00', 51.48, 0)
+    expect(chart.ascendant?.modernSign).toBe('Aries')
+    expect(buildNatalChart('2000-01-01').ascendant).toBeUndefined()
+  })
+})
+
+describe('modern calendar', () => {
+  const chart = buildNatalChart('1985-06-15')
+
+  it('scores with modern signs and numerology, without Babylonian dates', () => {
+    const days = scoreModernDays(chart, 30, localDate(2026, 11, 1))
+    expect(days).toHaveLength(30)
+    expect(days.every(day => day.babylonianDate === undefined)).toBe(true)
+    expect(days.every(day => day.stars >= 1 && day.stars <= 5)).toBe(true)
+    expect(days.map(day => day.reasons.join(' ')).join(' ')).toMatch(/Personal Day/)
+  })
+
+  // Mercury's 2026 retrograde runs from about Oct 24 to Nov 13
+  it('sees Mercury retrograde as viewed from Earth', () => {
+    const during = scoreModernDays(chart, 1, localDate(2026, 11, 1))[0]
+    const after = scoreModernDays(chart, 1, localDate(2026, 11, 30))[0]
+    expect(during.reasons.join(' ')).toMatch(/Mercury retrograde/)
+    expect(after.reasons.join(' ')).not.toMatch(/Mercury retrograde/)
+  })
+
+  it('can rate the same day differently from the Babylonian calendar', () => {
+    const start = localDate(2026, 11, 1)
+    const babylonian = scoreDays(chart, 30, start).map(day => day.stars)
+    const modern = scoreModernDays(chart, 30, start).map(day => day.stars)
+    expect(babylonian).not.toEqual(modern)
   })
 })
 

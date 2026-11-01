@@ -6,16 +6,16 @@ const DEG = Math.PI / 180
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-function norm360(x: number): number {
+export function norm360(x: number): number {
   return ((x % 360) + 360) % 360
 }
 
 // Peaks at new moon (0°) and full moon (180°), troughs at quarters
-function moonPhaseScore(phase: number): number {
+export function moonPhaseScore(phase: number): number {
   return (1 + Math.cos(2 * phase * DEG)) / 2
 }
 
-function moonPhaseName(phase: number): string {
+export function moonPhaseName(phase: number): string {
   if (phase < 22.5 || phase >= 337.5) return 'New Moon'
   if (phase < 67.5) return 'Waxing Crescent'
   if (phase < 112.5) return 'First Quarter'
@@ -59,8 +59,18 @@ export interface DayScore {
   moonPhaseName: string
   moonSign: string
   dayName: string
-  babylonianDate: string
+  babylonianDate?: string
   reasons: string[]
+}
+
+// Assign stars by rank: top 3 = 4 stars (indigo), rest by percentile
+export function assignStars(results: DayScore[]): void {
+  const nonSpecial = results.filter(r => r.stars !== 5).sort((a, b) => a.score - b.score)
+  const n = nonSpecial.length
+  nonSpecial.forEach((r, rank) => {
+    const pct = rank / n
+    r.stars = pct >= 0.85 ? 4 : pct >= 0.60 ? 3 : pct >= 0.30 ? 2 : 1
+  })
 }
 
 export function scoreDays(natal: NatalChart, days = 42, startDate?: Date): DayScore[] {
@@ -146,13 +156,7 @@ export function scoreDays(natal: NatalChart, days = 42, startDate?: Date): DaySc
     results.push({ date: dateStr, score, stars: isSpecial ? 5 : 0, moonPhaseName: phaseName, moonSign: moon.sign, dayName: DAY_NAMES[day.getDay()], babylonianDate: babylonian, reasons })
   }
 
-  // Assign stars by rank: top 3 = 4 stars (indigo), rest by percentile
-  const nonSpecial = results.filter(r => r.stars !== 5).sort((a, b) => a.score - b.score)
-  const n = nonSpecial.length
-  nonSpecial.forEach((r, rank) => {
-    const pct = rank / n
-    r.stars = pct >= 0.85 ? 4 : pct >= 0.60 ? 3 : pct >= 0.30 ? 2 : 1
-  })
+  assignStars(results)
 
   return results
 }

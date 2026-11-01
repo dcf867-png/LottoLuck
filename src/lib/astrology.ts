@@ -8,6 +8,7 @@ import vsopJupiter from 'astronomia/data/vsop87Bjupiter'
 import vsopSaturn from 'astronomia/data/vsop87Bsaturn'
 
 const RAD = 180 / Math.PI
+const DEG = Math.PI / 180
 
 const earthPlanet = new Planet(vsopEarth)
 const mercuryPlanet = new Planet(vsopMercury)
@@ -55,6 +56,15 @@ function planetLonDeg(planet: Planet, jde: number): number {
   return norm360(Math.atan2(y, x) * RAD)
 }
 
+function ascendantLonDeg(jde: number, lat: number, lng: number): number {
+  const gst = norm360(280.46061837 + 360.98564736629 * (jde - 2451545.0))
+  const ramc = norm360(gst + lng) * DEG
+  const eps = 23.4397 * DEG
+  const phi = lat * DEG
+  const asc = Math.atan2(Math.cos(ramc), -Math.sin(ramc) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps))
+  return norm360(asc * RAD)
+}
+
 function moonPhaseName(phase: number): string {
   if (phase < 22.5 || phase >= 337.5) return 'New Moon'
   if (phase < 67.5) return 'Waxing Crescent'
@@ -85,6 +95,7 @@ export interface NatalChart {
   lat?: number
   lng?: number
   planets: PlanetInfo[]
+  ascendant?: PlanetInfo
   todayMoonPhase: number
   todayMoonPhaseName: string
 }
@@ -122,6 +133,11 @@ export function buildNatalChart(
   const birthJDE = jdeFromParts(birthDate, utHours)
   const todayJDE = julian.DateToJD(new Date())
 
+  let ascendant: PlanetInfo | undefined
+  if (birthTime && lat != null && lng != null) {
+    ascendant = planetInfo('Ascendant', ascendantLonDeg(birthJDE, lat, lng), birthJDE)
+  }
+
   const todaySunLon = solarLon(todayJDE)
   const todayMoonLon = moonLonDeg(todayJDE)
   const todayMoonPhase = norm360(todayMoonLon - todaySunLon)
@@ -132,6 +148,7 @@ export function buildNatalChart(
     lat,
     lng,
     planets: skyAt(birthJDE),
+    ascendant,
     todayMoonPhase,
     todayMoonPhaseName: moonPhaseName(todayMoonPhase),
   }
