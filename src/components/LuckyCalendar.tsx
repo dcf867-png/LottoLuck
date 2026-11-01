@@ -55,6 +55,7 @@ export default function LuckyCalendar({ title, description, chart, scoreDays, mo
   // Calendar state
   const [offset, setOffset] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
+  const [topDaysOpen, setTopDaysOpen] = useState(true)
   const month = monthAt(offset)
   const monthStart = month.start.getTime()
   const monthLast = month.last.getTime()
@@ -251,8 +252,15 @@ export default function LuckyCalendar({ title, description, chart, scoreDays, mo
       {/* Top 5 lucky days */}
       {top5.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-[10px] uppercase tracking-[3px] text-purple-400 text-center">Top Lucky Days</p>
-          {top5.map(day => (
+          <button
+            onClick={() => setTopDaysOpen(open => !open)}
+            aria-expanded={topDaysOpen}
+            className="flex items-center justify-center gap-2 py-2 text-purple-400 hover:text-purple-300 transition-colors"
+          >
+            <span className="text-[10px] uppercase tracking-[3px]">Top Lucky Days</span>
+            <span className="text-xl leading-none" aria-hidden="true">{topDaysOpen ? '▲' : '▼'}</span>
+          </button>
+          {topDaysOpen && top5.map(day => (
             <div
               key={day.date}
               className="bg-black/25 rounded-lg px-4 py-3 flex flex-col gap-1.5 cursor-pointer hover:bg-black/40 transition-colors"
