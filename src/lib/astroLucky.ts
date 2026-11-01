@@ -1,32 +1,19 @@
 import type { Game } from './types'
 import { GAME_CONFIG } from './types'
 import type { NatalChart, PlanetInfo } from './astrology'
-import { getCurrentTransits } from './astrology'
+import { getTransits, PLANET_NATURE } from './astrology'
+import { babylonianDate, favorableWeight } from './babylonian'
 
 const DEG = Math.PI / 180
-
-function angularDistance(a: number, b: number): number {
-  const d = Math.abs(a - b) % 360
-  return d > 180 ? 360 - d : d
-}
-
-function aspectScore(angle: number): number {
-  if (angle <= 8) return 3
-  if (Math.abs(angle - 60) <= 6) return 2
-  if (Math.abs(angle - 90) <= 8) return -1
-  if (Math.abs(angle - 120) <= 8) return 3
-  if (Math.abs(angle - 180) <= 8) return -1
-  return 0
-}
 
 function lonToAnchor(lon: number, max: number): number {
   return Math.max(1, Math.min(max, Math.round((lon / 360) * max) + 1))
 }
 
-function scoreNatalPlanet(natalLon: number, transits: PlanetInfo[]): number {
+function scoreNatalPlanet(natal: PlanetInfo, transits: PlanetInfo[]): number {
   let score = 1
   for (const t of transits) {
-    score += aspectScore(angularDistance(t.lon, natalLon))
+    if (t.sign === natal.sign) score += PLANET_NATURE[t.name] * 3
   }
   return Math.max(score, 0.5)
 }
@@ -39,11 +26,11 @@ export function generateAstrologyPick(
   const whiteMax = GAME_CONFIG[game].whiteMax.current
   const bonusMax = GAME_CONFIG[game].bonusMax.current
 
-  const transits = getCurrentTransits()
+  const transits = getTransits()
+  const { monthIndex } = babylonianDate(new Date())
   const scores = new Float64Array(whiteMax + 1)
 
-  const allNatal = [...natal.planets]
-  if (natal.ascendant) allNatal.push(natal.ascendant)
+  const allNatal = natal.planets
 
   // Rotate planet order per game so each game emphasises different planets
   const rotated = game === 'powerball'
@@ -54,7 +41,7 @@ export function generateAstrologyPick(
     const base = lonToAnchor(planet.lon, whiteMax)
     const varShift = (variation * (idx + 1) * 7) % whiteMax
     const anchor = ((base + varShift - 1) % whiteMax) + 1
-    const planetScore = scoreNatalPlanet(planet.lon, transits)
+    const planetScore = scoreNatalPlanet(planet, transits)
 
     for (let offset = -4; offset <= 4; offset++) {
       const n = ((anchor + offset - 1 + whiteMax) % whiteMax) + 1
@@ -68,6 +55,11 @@ export function generateAstrologyPick(
   for (let n = 1; n <= whiteMax; n++) {
     const pos = (n / whiteMax - 0.5) * 2
     scores[n] += pos * phaseBias
+  }
+
+  // Numbers line up with the days of this Babylonian month, wrapping past 30, and favorable days score higher
+  for (let n = 1; n <= whiteMax; n++) {
+    scores[n] += 0.75 * favorableWeight(monthIndex, ((n - 1) % 30) + 1)
   }
 
   // Game-specific perturbation so PB and MM scores diverge

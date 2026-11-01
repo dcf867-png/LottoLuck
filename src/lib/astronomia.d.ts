@@ -9,8 +9,11 @@ declare module 'astronomia' {
   export const moonposition: {
     position(jde: number): { lon: number; lat: number; delta: number }
   }
-  export const sidereal: {
-    apparent(jde: number): number
+  export const moonphase: {
+    newMoon(year: number): number
+  }
+  export const solstice: {
+    march(year: number): number
   }
 }
 
@@ -21,6 +24,7 @@ declare module 'astronomia/planetposition' {
   }
 }
 
+declare module 'astronomia/data/vsop87Bearth'   { const d: unknown; export default d }
 declare module 'astronomia/data/vsop87Bmercury' { const d: unknown; export default d }
 declare module 'astronomia/data/vsop87Bvenus'   { const d: unknown; export default d }
 declare module 'astronomia/data/vsop87Bmars'    { const d: unknown; export default d }

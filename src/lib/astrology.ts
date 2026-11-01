@@ -1,5 +1,6 @@
-import { julian, solar, moonposition, sidereal } from 'astronomia'
+import { julian, solar, moonposition } from 'astronomia'
 import { Planet } from 'astronomia/planetposition'
+import vsopEarth from 'astronomia/data/vsop87Bearth'
 import vsopMercury from 'astronomia/data/vsop87Bmercury'
 import vsopVenus from 'astronomia/data/vsop87Bvenus'
 import vsopMars from 'astronomia/data/vsop87Bmars'
@@ -7,8 +8,8 @@ import vsopJupiter from 'astronomia/data/vsop87Bjupiter'
 import vsopSaturn from 'astronomia/data/vsop87Bsaturn'
 
 const RAD = 180 / Math.PI
-const DEG = Math.PI / 180
 
+const earthPlanet = new Planet(vsopEarth)
 const mercuryPlanet = new Planet(vsopMercury)
 const venusPlanet = new Planet(vsopVenus)
 const marsPlanet = new Planet(vsopMars)
@@ -26,6 +27,11 @@ function lonToSign(lon: number): string {
   return SIGNS[Math.floor(norm360(lon) / 30)]
 }
 
+// Gap between the star-fixed Babylonian zodiac and the modern one: Huber's value at J2000 plus precession
+function starOffset(jde: number): number {
+  return 24.7336 + (5027.8 / 3600) * ((jde - 2451545.0) / 36525.0)
+}
+
 function jdeFromParts(dateStr: string, utHours: number): number {
   const [y, m, d] = dateStr.split('-').map(Number)
   return julian.CalendarGregorianToJD(y, m, d + utHours / 24)
@@ -40,18 +46,13 @@ function moonLonDeg(jde: number): number {
   return norm360(moonposition.position(jde).lon * RAD)
 }
 
+// VSOP positions are measured from the Sun, so Earth's is removed to get the planet's place in our sky
 function planetLonDeg(planet: Planet, jde: number): number {
-  return norm360(planet.position(jde).lon * RAD)
-}
-
-function ascendantLonDeg(jde: number, lat: number, lng: number): number {
-  const gst = norm360(sidereal.apparent(jde) * RAD)
-  const lst = (gst + lng + 360) % 360
-  const ramc = lst * DEG
-  const eps = 23.4397 * DEG
-  const phi = lat * DEG
-  const asc = Math.atan2(Math.cos(ramc), -Math.sin(ramc) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps))
-  return norm360(asc * RAD)
+  const p = planet.position(jde)
+  const e = earthPlanet.position(jde)
+  const x = p.range * Math.cos(p.lat) * Math.cos(p.lon) - e.range * Math.cos(e.lat) * Math.cos(e.lon)
+  const y = p.range * Math.cos(p.lat) * Math.sin(p.lon) - e.range * Math.cos(e.lat) * Math.sin(e.lon)
+  return norm360(Math.atan2(y, x) * RAD)
 }
 
 function moonPhaseName(phase: number): string {
@@ -65,10 +66,17 @@ function moonPhaseName(phase: number): string {
   return 'Waning Crescent'
 }
 
+// How each body behaves when it enters a sign: Babylonian benefics above zero, malefics below
+export const PLANET_NATURE: Record<string, number> = {
+  Jupiter: 1.0, Venus: 0.85, Moon: 0.60, Sun: 0.50,
+  Mercury: 0.30, Mars: -0.50, Saturn: -0.60,
+}
+
 export interface PlanetInfo {
   name: string
   lon: number
   sign: string
+  modernSign: string
 }
 
 export interface NatalChart {
@@ -77,9 +85,25 @@ export interface NatalChart {
   lat?: number
   lng?: number
   planets: PlanetInfo[]
-  ascendant?: PlanetInfo
   todayMoonPhase: number
   todayMoonPhaseName: string
+}
+
+function planetInfo(name: string, modernLon: number, jde: number): PlanetInfo {
+  const lon = norm360(modernLon - starOffset(jde))
+  return { name, lon, sign: lonToSign(lon), modernSign: lonToSign(modernLon) }
+}
+
+function skyAt(jde: number): PlanetInfo[] {
+  return [
+    planetInfo('Sun', solarLon(jde), jde),
+    planetInfo('Moon', moonLonDeg(jde), jde),
+    planetInfo('Mercury', planetLonDeg(mercuryPlanet, jde), jde),
+    planetInfo('Venus', planetLonDeg(venusPlanet, jde), jde),
+    planetInfo('Mars', planetLonDeg(marsPlanet, jde), jde),
+    planetInfo('Jupiter', planetLonDeg(jupiterPlanet, jde), jde),
+    planetInfo('Saturn', planetLonDeg(saturnPlanet, jde), jde),
+  ]
 }
 
 export function buildNatalChart(
@@ -98,30 +122,6 @@ export function buildNatalChart(
   const birthJDE = jdeFromParts(birthDate, utHours)
   const todayJDE = julian.DateToJD(new Date())
 
-  const sunLon = solarLon(birthJDE)
-  const moonLon = moonLonDeg(birthJDE)
-  const mercuryLon = planetLonDeg(mercuryPlanet, birthJDE)
-  const venusLon = planetLonDeg(venusPlanet, birthJDE)
-  const marsLon = planetLonDeg(marsPlanet, birthJDE)
-  const jupiterLon = planetLonDeg(jupiterPlanet, birthJDE)
-  const saturnLon = planetLonDeg(saturnPlanet, birthJDE)
-
-  const planets: PlanetInfo[] = [
-    { name: 'Sun', lon: sunLon, sign: lonToSign(sunLon) },
-    { name: 'Moon', lon: moonLon, sign: lonToSign(moonLon) },
-    { name: 'Mercury', lon: mercuryLon, sign: lonToSign(mercuryLon) },
-    { name: 'Venus', lon: venusLon, sign: lonToSign(venusLon) },
-    { name: 'Mars', lon: marsLon, sign: lonToSign(marsLon) },
-    { name: 'Jupiter', lon: jupiterLon, sign: lonToSign(jupiterLon) },
-    { name: 'Saturn', lon: saturnLon, sign: lonToSign(saturnLon) },
-  ]
-
-  let ascendant: PlanetInfo | undefined
-  if (birthTime && lat != null && lng != null) {
-    const ascLon = ascendantLonDeg(birthJDE, lat, lng)
-    ascendant = { name: 'Ascendant', lon: ascLon, sign: lonToSign(ascLon) }
-  }
-
   const todaySunLon = solarLon(todayJDE)
   const todayMoonLon = moonLonDeg(todayJDE)
   const todayMoonPhase = norm360(todayMoonLon - todaySunLon)
@@ -131,31 +131,12 @@ export function buildNatalChart(
     birthTime,
     lat,
     lng,
-    planets,
-    ascendant,
+    planets: skyAt(birthJDE),
     todayMoonPhase,
     todayMoonPhaseName: moonPhaseName(todayMoonPhase),
   }
 }
 
-export function getCurrentTransits(): PlanetInfo[] {
-  const jde = julian.DateToJD(new Date())
-
-  const sunLon = solarLon(jde)
-  const moonLon = moonLonDeg(jde)
-  const mercuryLon = planetLonDeg(mercuryPlanet, jde)
-  const venusLon = planetLonDeg(venusPlanet, jde)
-  const marsLon = planetLonDeg(marsPlanet, jde)
-  const jupiterLon = planetLonDeg(jupiterPlanet, jde)
-  const saturnLon = planetLonDeg(saturnPlanet, jde)
-
-  return [
-    { name: 'Sun', lon: sunLon, sign: lonToSign(sunLon) },
-    { name: 'Moon', lon: moonLon, sign: lonToSign(moonLon) },
-    { name: 'Mercury', lon: mercuryLon, sign: lonToSign(mercuryLon) },
-    { name: 'Venus', lon: venusLon, sign: lonToSign(venusLon) },
-    { name: 'Mars', lon: marsLon, sign: lonToSign(marsLon) },
-    { name: 'Jupiter', lon: jupiterLon, sign: lonToSign(jupiterLon) },
-    { name: 'Saturn', lon: saturnLon, sign: lonToSign(saturnLon) },
-  ]
+export function getTransits(date: Date = new Date()): PlanetInfo[] {
+  return skyAt(julian.DateToJD(date))
 }

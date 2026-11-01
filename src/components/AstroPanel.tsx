@@ -76,7 +76,7 @@ const SIGN_COLORS: Record<string, string> = {
   Pisces: 'text-indigo-400',
 }
 
-function ChartBadge({ label, value, planetSymbol, symbolColor = 'text-purple-400' }: { label: string; value: string; planetSymbol?: string; symbolColor?: string }) {
+function ChartBadge({ label, value, modernValue, planetSymbol, symbolColor = 'text-purple-400' }: { label: string; value: string; modernValue?: string; planetSymbol?: string; symbolColor?: string }) {
   const signSymbol = SIGN_SYMBOLS[value]
   const signColor = SIGN_COLORS[value] ?? 'text-purple-300'
   return (
@@ -88,6 +88,9 @@ function ChartBadge({ label, value, planetSymbol, symbolColor = 'text-purple-400
       <span className={`text-base font-bold ${signColor}`}>
         {signSymbol && <span className="mr-0.5">{signSymbol}</span>}{value}
       </span>
+      {modernValue && modernValue !== value && (
+        <span className="text-xs text-gray-300">modern {modernValue}</span>
+      )}
     </div>
   )
 }
@@ -219,7 +222,7 @@ export default function AstroPanel({
         <DateInput value={birthDate} onChange={onBirthDateChange} label="Date of Birth" required />
         <div>
           <label className="block text-xs text-gray-200 mb-1">
-            Birth Time <span className="text-gray-400">(optional — enables rising sign)</span>
+            Birth Time <span className="text-gray-400">(optional — makes your Moon position more exact)</span>
           </label>
           <div className="relative">
             <input
@@ -235,7 +238,7 @@ export default function AstroPanel({
         </div>
         <div>
           <label className="block text-xs text-gray-200 mb-1">
-            Birth City / State <span className="text-gray-400">(optional — for rising sign accuracy)</span>
+            Birth City / State <span className="text-gray-400">(optional — adjusts your birth time)</span>
           </label>
           <input
             type="text"
@@ -298,9 +301,8 @@ export default function AstroPanel({
             <div>
               <p className="text-xs text-gray-300 mb-2 uppercase tracking-widest">Your Natal Chart</p>
               <div className="grid grid-cols-2 gap-3">
-                {sun && <ChartBadge label="Sun" value={sun.sign} planetSymbol="☀" symbolColor="text-yellow-400" />}
-                {moon && <ChartBadge label="Moon" value={moon.sign} planetSymbol="☽" symbolColor="text-blue-400" />}
-                {chart.ascendant && <ChartBadge label="Rising" value={chart.ascendant.sign} planetSymbol="↑" />}
+                {sun && <ChartBadge label="Sun" value={sun.sign} modernValue={sun.modernSign} planetSymbol="☀" symbolColor="text-yellow-400" />}
+                {moon && <ChartBadge label="Moon" value={moon.sign} modernValue={moon.modernSign} planetSymbol="☽" symbolColor="text-blue-400" />}
                 <ChartBadge label="Moon Phase" value={chart.todayMoonPhaseName} />
               </div>
             </div>
@@ -312,7 +314,7 @@ export default function AstroPanel({
         <div className="flex flex-col gap-4">
           <p className="text-[10px] uppercase tracking-[3px] text-purple-400 text-center">Lucky Calendar</p>
           <p className="text-xs text-gray-400 -mt-2">
-            Your luckiest days based on lunar cycles, personal numerology, and planetary influences.
+            Your luckiest days based on the Babylonian lunar calendar, ancient tablet lists of favorable days, and your birth chart.
           </p>
 
           {/* Month navigation */}
@@ -375,7 +377,9 @@ export default function AstroPanel({
                 <span className="text-sm font-semibold text-white">{formatDate(selectedDay.date)}</span>
                 <Stars count={selectedDay.stars} />
               </div>
-              <div className="flex gap-2 text-[11px] text-purple-300">
+              <div className="flex flex-wrap gap-2 text-[11px] text-purple-300">
+                <span>{selectedDay.babylonianDate}</span>
+                <span>·</span>
                 <span>{PHASE_ICONS[selectedDay.moonPhaseName] ?? '🌙'} {selectedDay.moonPhaseName}</span>
                 <span>·</span>
                 <span>Moon in {selectedDay.moonSign}</span>
@@ -407,7 +411,9 @@ export default function AstroPanel({
                     <span className="text-sm font-semibold text-white">{formatDate(day.date)}</span>
                     <Stars count={day.stars} />
                   </div>
-                  <div className="flex gap-2 text-[11px] text-purple-300">
+                  <div className="flex flex-wrap gap-2 text-[11px] text-purple-300">
+                    <span>{day.babylonianDate}</span>
+                    <span>·</span>
                     <span>{PHASE_ICONS[day.moonPhaseName] ?? '🌙'} {day.moonPhaseName}</span>
                     <span>·</span>
                     <span>Moon in {day.moonSign}</span>
