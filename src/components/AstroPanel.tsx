@@ -347,7 +347,7 @@ export default function AstroPanel({
                 <div key={dateStr} className={cls} onClick={() => !isPast && ds && setSelected(isSelected ? null : dateStr)}>
                   <span>{day}</span>
                   {ds && !isPast && (
-                    <span className="text-yellow-300 leading-none" style={{ fontSize: '16px', letterSpacing: '-1px', textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
+                    <span className="text-yellow-300 leading-none whitespace-nowrap" style={{ fontSize: 'clamp(7px, 2.3vw, 11px)', letterSpacing: '-0.5px', textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
                       {'★'.repeat(ds.stars)}
                     </span>
                   )}
